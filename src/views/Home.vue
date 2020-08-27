@@ -6,8 +6,14 @@
 
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
+import api from "../api/index.js";
 @Component({})
 export default class Home extends Vue {
+  mounted(): void {
+    api.getjsSdk().then(res => {
+      console.log(res);
+    });
+  }
   gotoWeb(e: string) {
     this.$router.push(e);
   }
