@@ -19,15 +19,16 @@
 import { Component, Vue, Watch } from "vue-property-decorator";
 import rightButton from "./components/rightButton.vue";
 import showPopup from "./components/showPopup.vue";
-interface showContent {
-  [key: string]: string | number;
+const api = require("./api/index.js");
+interface ShowContent {
+  [key: string]: string | number | null;
 }
-interface content {
+interface Contents {
   contentName: string;
   content: Content;
 }
-type Content = showContent[] | popupContent | null;
-interface popupContent {
+type Content = ShowContent[] | PopupContent | null;
+interface PopupContent {
   name: string;
   buttonText: string;
   imgUrl: string;
@@ -47,7 +48,10 @@ export default class App extends Vue {
   // 是否显示我的月饼按钮的光圈效果
   isShowShadow = false;
   //点击右上按钮应该显示的内容
-  isShowContent: content = { contentName: "rule", content: null };
+  isShowContent: Contents = { contentName: "rule", content: null };
+  //排行榜返回的值
+  rankData!: ShowContent[];
+
   @Watch("$route")
   //监听路由
   // eslint-disable-next-line
@@ -63,11 +67,85 @@ export default class App extends Vue {
       this.isShowShadow = false;
     }
   }
+  created(): void {
+    this.getJsSign();
+  }
   mounted(): void {
     if (this.$route.name !== "Home") {
       this.$router.push("/");
       this.showButtonName = ["rule", "myMoonCake", "rank"];
     }
+  }
+
+  //返回并在local中存入openId
+  setOpenId(e: string): string {
+    localStorage.setItem("hhl_openId", e.split("=")[1]);
+    return e.split("=")[1];
+  }
+  //获取微信权限
+  getJsSign() {
+    const self = this;
+    let url = location.href.split("#")[0];
+    localStorage.clear();
+    url =
+      "http://qrhhl.yunyutian.cn/cake/index.html?openid=oXslc067VusqD_qfe_Vh9j1oEBVc";
+    const openId = this.setOpenId(url);
+    // eslint-disable-next-line
+    api.getjsSdk(url).then((res: any) => {
+      const value = res.data.data;
+      // eslint-disable-next-line
+      (self as any).wx.config({
+        debug: false,
+        appId: value.appid,
+        timestamp: value.timestamp, // 必填，生成签名的时间戳
+        nonceStr: value.nonceStr, // 必填，生成签名的随机串
+        signature: value.signature, // 必填，签名
+        jsApiList: ["getLocation", "hideAllNonBaseMenuItem"] // 必填，需要使用的JS接口列表
+      });
+      // eslint-disable-next-line
+      (self as any).wx.ready(function() {
+        // eslint-disable-next-line
+        (self as any).wx.hideAllNonBaseMenuItem();
+        (self as any).wx.getLocation({
+          type: "wgs84",
+          // eslint-disable-next-line
+          success: function(res: any) {
+            let data = {
+              openid: openId,
+              latitude: res.latitude || 0,
+              longitude: res.longitude || 0
+            };
+            self.getUserInfo(data);
+          },
+          fail: function() {
+            let data = {
+              openid: openId,
+              latitude: 0,
+              longitude: 0
+            };
+            self.getUserInfo(data);
+          }
+        });
+      });
+    });
+  }
+  //接口：获取月饼排行榜
+  getRank() {
+    const self = this;
+    api.getRank().then((res: any) => {
+      self.rankData = res.data.data;
+    });
+  }
+  // 接口：获取用户信息
+  getUserInfo(e: ShowContent) {
+    const self = this;
+    api.getUserInfo(e).then((res: any) => {
+      localStorage.setItem(
+        "hhl_festival_userInfo",
+        JSON.stringify(res.data.data)
+      );
+      self.getRank();
+    });
   }
   // 点击右上按钮的不同结果
   result(e: string) {
@@ -88,78 +166,11 @@ export default class App extends Vue {
         this.$router.push("/myMoonCake");
         break;
       case "rank":
-        this.alertPopup("rank", [
-          {
-            rank: "NO.1",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 25
-          },
-          {
-            rank: "NO.2",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 5
-          },
-          {
-            rank: "NO.3",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 5
-          },
-          {
-            rank: "NO.4",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 5
-          },
-          {
-            rank: "NO.5",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 5
-          },
-          {
-            rank: "NO.6",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 5
-          },
-          {
-            rank: "NO.7",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 5
-          },
-          {
-            rank: "NO.7",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 5
-          },
-          {
-            rank: "NO.7",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 5
-          },
-          {
-            rank: "NO.7",
-            memberNo: "0000002",
-            headImgUrl:
-              "http://thirdwx.qlogo.cn/mmopen/zdnK20sibswjylfCrCU6mUoERwTJBeAjV0RkiaSvwQXg1QOMNichJ4brWszO5iasicSIkVBsGHR9yRjuwQia2aDDK4fTTyHqpyhDIk/132",
-            cakeAmount: 5
-          }
-        ]);
+        this.alertPopup(
+          "rank",
+
+          this.rankData
+        );
         break;
     }
   }

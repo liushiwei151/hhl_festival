@@ -6,20 +6,14 @@
 
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
-import api from "../api/index.js";
 @Component({})
 export default class Home extends Vue {
-  mounted(): void {
-    api.getjsSdk().then(res => {
-      console.log(res);
-    });
-  }
   gotoWeb(e: string) {
     this.$router.push(e);
   }
 }
 </script>
-<style lang="less" scope>
+<style lang="less" scoped>
 .home {
   background: url(../assets/home_bg.png) no-repeat;
   background-size: 100% 100%;

@@ -5,18 +5,18 @@ import Axios from "axios";
 import Vue from "vue";
 
 //链接
-let axios = Axios.create({
-  baseURL: "test", //测试
+const axios = Axios.create({
+  // baseURL: "test", //本地测试
+  baseURL: "http://qrhhl.yunyutian.cn",
   timeout: 1000 * 12,
-  headers: { "Content-Type": "application/x-www-form-urlencoded" }
+  headers: { "Content-Type": "application/json" }
 });
 
 // 提示函数
-
 const tip = msg => {
-  Vue.$toast({
-    message: msg,
-    duration: "1000"
+  Vue.prototype.$Toast({
+    msg: msg,
+    duration: "1500"
   });
 };
 //请求失败后的错误统一处理
@@ -33,8 +33,11 @@ const errorHandle = (status, other) => {
 axios.interceptors.request.use(
   config => {
     // 在发送请求之前做些什么(后期在这里加上token)
-    // const token = store.state.token;
-    // token && (config.headers.Authorization = token);
+    const userInfo = JSON.parse(localStorage.getItem("hhl_festival_userInfo"));
+    if (userInfo && userInfo.token) {
+      console.log(userInfo.token);
+      config.headers.token = userInfo.token;
+    }
     return config;
   },
   error => {
@@ -47,8 +50,9 @@ axios.interceptors.response.use(
   // 请求成功
   res => {
     if (res.data.code === 200) {
-      return Promise.resolve(res.data.data);
+      return Promise.resolve(res);
     } else {
+      errorHandle(res.data.code, res.data.msg);
       return Promise.reject(res);
     }
   },
@@ -58,7 +62,7 @@ axios.interceptors.response.use(
     console.log(error);
     if (response) {
       // 请求已发出，但是不在200的范围
-      errorHandle(response.status, response.data.msg);
+      errorHandle(404, "出现未知错误");
       return Promise.reject(response);
     } else {
       // 处理断网的情况
@@ -66,7 +70,7 @@ axios.interceptors.response.use(
       // network状态在app.vue中控制着一个全局的断网提示组件的显示隐藏
       // 关于断网组件中的刷新重新获取数据，会在断网组件中说明
       // store.commit('changeNetwork', false);
-      tip("请求超时");
+      tip("请求失败，出现未知错误");
     }
   }
 );

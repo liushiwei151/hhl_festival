@@ -21,7 +21,7 @@
         </div>
       </li>
       <li class="moonCakeButton">
-        <div></div>
+        <div @click="getmaterials"></div>
         <div :class="{ gray: isShowButton }"></div>
       </li>
     </ul>
@@ -30,7 +30,7 @@
 
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
-
+const api = require("../api/index.js");
 interface materialObjData {
   [key: string]: materialObjDatas[];
 }
@@ -110,6 +110,14 @@ export default class MoonCake extends Vue {
       return false;
     }
   }
+  //接口：收集材料
+  getmaterials() {
+    let openid = localStorage.getItem("hhl_openId");
+    api.getmaterials(openid).then((res: any) => {
+      console.log(res);
+    });
+  }
+  //选中材料
   choseMaterial(e: string, f: number) {
     if (this.materialObj[e][f].isConfirm) {
       this.materialObj[e][f].isConfirm = false;

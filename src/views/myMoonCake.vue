@@ -1,11 +1,7 @@
 <template>
   <div class="myMoonCake-web">
     <ul>
-      <li
-        v-for="(item, index) in cakeObj"
-        :key="item.name"
-        @click="choseCake(item)"
-      >
+      <li v-for="item in cakeObj" :key="item.name" @click="choseCake(item)">
         <div
           class="img"
           :style="{ backgroundImage: 'url(' + item.imgName + ')' }"
@@ -29,15 +25,15 @@
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 
-interface cakeObjData {
+interface CakeObjData {
   name: string;
   imgName: string;
   num: number;
 }
 @Component({})
-export default class myMoonCake extends Vue {
+export default class MyMoonCake extends Vue {
   //月饼对象
-  cakeObj: cakeObjData[] = [
+  cakeObj: CakeObjData[] = [
     {
       name: "楼楼蛋黄月饼",
       imgName: require("../assets/myMoonCake/yolk_cake.png"),
@@ -89,8 +85,8 @@ export default class myMoonCake extends Vue {
     return false;
   }
   //选取月饼
-  choseCake(e: cakeObjData) {
-    let index = this.choseCakeData.indexOf(e.name);
+  choseCake(e: CakeObjData) {
+    const index = this.choseCakeData.indexOf(e.name);
     if (index > -1) {
       this.choseCakeData.splice(index, 1);
     } else {
