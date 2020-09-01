@@ -7,10 +7,12 @@
           :style="{ backgroundImage: 'url(' + item.imgName + ')' }"
         ></div>
         <div class="fontBox">
-          <div class="fontColor">{{ item.name }} ×{{ item.num }}</div>
+          <div class="fontColor">
+            {{ item.name }} ×{{ item.numArray.length }}
+          </div>
           <div
             class="fontConfirem"
-            :class="{ fontYes: choseCakeData.indexOf(item.name) > -1 }"
+            :class="{ fontYes: choseCakeData.indexOf(item.cakeType) > -1 }"
           ></div>
         </div>
       </li>
@@ -18,82 +20,171 @@
     <button
       class="syntheticGift"
       :class="{ gray: !isClickSyntheticGift }"
+      @click="syntheticGift"
     ></button>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
-
+import { Component, Vue, Inject } from "vue-property-decorator";
+const api = require("../api/index.js");
 interface CakeObjData {
   name: string;
   imgName: string;
-  num: number;
+  numArray: number[];
+  cakeType: number;
 }
 @Component({})
 export default class MyMoonCake extends Vue {
+  @Inject()
+  private popup!: Function;
   //月饼对象
   cakeObj: CakeObjData[] = [
     {
       name: "楼楼蛋黄月饼",
       imgName: require("../assets/myMoonCake/yolk_cake.png"),
-      num: 0
+      numArray: [],
+      cakeType: 1
     },
     {
       name: "楼楼豆沙月饼",
       imgName: require("../assets/myMoonCake/dousha_cake.png"),
-      num: 0
+      numArray: [],
+      cakeType: 2
     },
     {
       name: "楼楼五仁月饼",
       imgName: require("../assets/myMoonCake/wuren_cake.png"),
-      num: 0
+      numArray: [],
+      cakeType: 3
     },
     {
       name: "楼楼莲蓉月饼",
       imgName: require("../assets/myMoonCake/lotus_seed_cake.png"),
-      num: 0
+      numArray: [],
+      cakeType: 4
     },
     {
       name: "黄鹤楼蛋黄月饼",
       imgName: require("../assets/myMoonCake/hhl_yolk_cake.png"),
-      num: 0
+      numArray: [],
+      cakeType: 5
     },
     {
       name: "黄鹤楼豆沙月饼",
       imgName: require("../assets/myMoonCake/hhl_dousha_cake.png"),
-      num: 0
+      numArray: [],
+      cakeType: 6
     },
     {
       name: "黄鹤楼五仁月饼",
       imgName: require("../assets/myMoonCake/hhl_wuren_cake.png"),
-      num: 0
+      numArray: [],
+      cakeType: 7
     },
     {
       name: "黄鹤楼莲蓉月饼",
       imgName: require("../assets/myMoonCake/hhl_lotus_seed_cake.png"),
-      num: 0
+      numArray: [],
+      cakeType: 8
     }
   ];
   //选中的月饼
-  choseCakeData: string[] = [];
+  choseCakeData: number[] = [];
   //按钮只有在选中四个的时候能点击
   get isClickSyntheticGift(): boolean {
     if (this.choseCakeData.length === 4) {
-      return true;
+      const array = this.choseCakeData.map(res => {
+        return this.cakeObj[res - 1].numArray.length;
+      });
+      const bo = array.every(val => {
+        return val > 0;
+      });
+      return bo;
     }
     return false;
   }
+  mounted(): void {
+    this.getCheckCake();
+  }
+  //接口:合成礼盒
+  syntheticGift() {
+    const self = this;
+    const userInfo = localStorage.getItem("hhl_festival_userInfo");
+    if (this.isClickSyntheticGift && userInfo) {
+      const user = JSON.parse(userInfo);
+      const data = {
+        userId: user.id,
+        data: {
+          cakeRecordIds: this.handleData(),
+          openid: user.openid
+        }
+      };
+      api.synthesis(data).then((res: any) => {
+        console.log(res.data.data);
+        const value = res.data.data;
+        self.handleData("del");
+        if (value.prizeType === 0) {
+          self.popup("popupBox", {
+            imgUrl: require("../assets/thanks.png"),
+            name: "楼中月",
+            prize: "谢谢参与",
+            buttonText: "好的"
+          });
+        } else {
+          self.popup("popupBox", {
+            imgUrl: value.imgUrl,
+            name: "楼中月",
+            prize: value.prizeName,
+            buttonText: "收下"
+          });
+        }
+      });
+    }
+  }
+  //根据选中的id返回选中的月饼中的第一个，如果传del，则把这几个删除
+  handleData(e?: string): number[] {
+    const value = this.choseCakeData.map(res => {
+      if (e === "del") {
+        this.cakeObj[res - 1].numArray.shift();
+      }
+      return this.cakeObj[res - 1].numArray[0];
+    });
+    return value;
+  }
+  // 接口：获取查看月饼
+  getCheckCake() {
+    const self = this;
+    const data = localStorage.getItem("hhl_openId");
+    if (data) {
+      api.checkCake(data).then((res: any) => {
+        console.log(res.data.data);
+        const value = res.data.data;
+        for (const i in value) {
+          for (const p in self.cakeObj) {
+            if (self.cakeObj[p].cakeType === value[i].cakeType) {
+              self.cakeObj[p].numArray.push(value[i].id);
+            }
+          }
+        }
+      });
+    } else {
+      this.$Toast({
+        msg: "未知错误，请刷新重试",
+        duration: "1500"
+      });
+    }
+  }
   //选取月饼
   choseCake(e: CakeObjData) {
-    const index = this.choseCakeData.indexOf(e.name);
+    const index = this.choseCakeData.indexOf(e.cakeType);
     if (index > -1) {
       this.choseCakeData.splice(index, 1);
     } else {
       if (this.choseCakeData.length >= 4) {
         this.choseCakeData.shift();
       }
-      this.choseCakeData.push(e.name);
+      this.choseCakeData.push(e.cakeType);
     }
   }
 }

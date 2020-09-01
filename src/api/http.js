@@ -19,6 +19,20 @@ const tip = msg => {
     duration: "1500"
   });
 };
+//wait
+const wait = msg => {
+  if (msg === "wait") {
+    Vue.prototype.$Toast({
+      msg: msg,
+      duration: "15000000"
+    });
+  } else {
+    Vue.prototype.$Toast({
+      msg: "wait",
+      duration: "0"
+    });
+  }
+};
 //请求失败后的错误统一处理
 const errorHandle = (status, other) => {
   switch (status) {
@@ -35,9 +49,9 @@ axios.interceptors.request.use(
     // 在发送请求之前做些什么(后期在这里加上token)
     const userInfo = JSON.parse(localStorage.getItem("hhl_festival_userInfo"));
     if (userInfo && userInfo.token) {
-      console.log(userInfo.token);
       config.headers.token = userInfo.token;
     }
+    wait("wait");
     return config;
   },
   error => {
@@ -49,6 +63,7 @@ axios.interceptors.request.use(
 axios.interceptors.response.use(
   // 请求成功
   res => {
+    wait(false);
     if (res.data.code === 200) {
       return Promise.resolve(res);
     } else {

@@ -13,10 +13,11 @@
       ></showPopup>
     </transition>
     <router-view />
+    <div class="wait" v-show="isWait"><div></div></div>
   </div>
 </template>
 <script lang="ts">
-import { Component, Vue, Watch } from "vue-property-decorator";
+import { Component, Vue, Watch, Provide } from "vue-property-decorator";
 import rightButton from "./components/rightButton.vue";
 import showPopup from "./components/showPopup.vue";
 const api = require("./api/index.js");
@@ -41,6 +42,12 @@ interface PopupContent {
   }
 })
 export default class App extends Vue {
+  @Provide()
+  public popup = this.alertPopup;
+  @Provide()
+  public wait = this.showWait;
+  //是否显示等待
+  isWait = false;
   //显示哪些按钮
   showButtonName: string[] = ["rule"];
   //是否显示弹窗
@@ -69,18 +76,30 @@ export default class App extends Vue {
   }
   created(): void {
     this.getJsSign();
-  }
-  mounted(): void {
     if (this.$route.name !== "Home") {
       this.$router.push("/");
       this.showButtonName = ["rule", "myMoonCake", "rank"];
     }
   }
-
+  //显隐wait
+  showWait(e: boolean) {
+    this.isWait = e;
+  }
   //返回并在local中存入openId
   setOpenId(e: string): string {
     localStorage.setItem("hhl_openId", e.split("=")[1]);
     return e.split("=")[1];
+  }
+  //接口：分享游戏
+  shareGame(e: string) {
+    const self = this;
+    // eslint-disable-next-line
+    api.shareGame(e).then((res: any) => {
+      self.$Toast({
+        msg: "分享成功",
+        duration: 1500
+      });
+    });
   }
   //获取微信权限
   getJsSign() {
@@ -90,6 +109,14 @@ export default class App extends Vue {
     url =
       "http://qrhhl.yunyutian.cn/cake/index.html?openid=oXslc067VusqD_qfe_Vh9j1oEBVc";
     const openId = this.setOpenId(url);
+    const share = {
+      title: "中秋待定",
+      desc: "中秋待定",
+      // link: "https://wx.hhl1916.com/huanghelou1916-center/wx/gCode?name=toBoat",
+      link:
+        "http://qrhhl.yunyutian.cn/huanghelou1916-center/wx/gCode?name=toBoat",
+      imgUrl: "https://pic.cwyyt.cn/upload/img/20200612/1623222322_longzhou.jpg"
+    };
     // eslint-disable-next-line
     api.getjsSdk(url).then((res: any) => {
       const value = res.data.data;
@@ -100,17 +127,56 @@ export default class App extends Vue {
         timestamp: value.timestamp, // 必填，生成签名的时间戳
         nonceStr: value.nonceStr, // 必填，生成签名的随机串
         signature: value.signature, // 必填，签名
-        jsApiList: ["getLocation", "hideAllNonBaseMenuItem"] // 必填，需要使用的JS接口列表
+        jsApiList: [
+          "getLocation",
+          "hideMenuItems",
+          "onMenuShareAppMessage",
+          "onMenuShareTimeline"
+        ] // 必填，需要使用的JS接口列表
       });
       // eslint-disable-next-line
       (self as any).wx.ready(function() {
         // eslint-disable-next-line
-        (self as any).wx.hideAllNonBaseMenuItem();
+        (self as any).wx.hideMenuItems({
+          menuList: [
+            "menuItem:editTag",
+            "menuItem:copyUrl",
+            "menuItem:originPage",
+            "menuItem:openWithQQBrowser",
+            "menuItem:openWithSafari",
+            "menuItem:share:email",
+            "menuItem:share:brand"
+          ]
+        });
+        // eslint-disable-next-line
+        (self as any).wx.onMenuShareTimeline({
+          title: share.title, // 分享标题
+          link: share.link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+          imgUrl: share.imgUrl, // 分享图标
+          success: function() {
+            // 设置成功
+            self.shareGame(openId);
+          }
+        });
+        // eslint-disable-next-line
+        (self as any).wx.onMenuShareAppMessage({
+          title: share.title, // 分享标题
+          desc: share.desc, //分享描述
+          link: share.link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+          imgUrl: share.imgUrl, // 分享图标
+          type: "", // 分享类型,music、video或link，不填默认为link
+          dataUrl: "", // 如果type是music或video，则要提供数据链接，默认为空
+          success: function() {
+            // 设置成功
+            self.shareGame(openId);
+          }
+        });
+        // eslint-disable-next-line
         (self as any).wx.getLocation({
           type: "wgs84",
           // eslint-disable-next-line
           success: function(res: any) {
-            let data = {
+            const data = {
               openid: openId,
               latitude: res.latitude || 0,
               longitude: res.longitude || 0
@@ -118,7 +184,7 @@ export default class App extends Vue {
             self.getUserInfo(data);
           },
           fail: function() {
-            let data = {
+            const data = {
               openid: openId,
               latitude: 0,
               longitude: 0
@@ -130,15 +196,24 @@ export default class App extends Vue {
     });
   }
   //接口：获取月饼排行榜
-  getRank() {
+  getRank(e?: string) {
     const self = this;
+    // eslint-disable-next-line
     api.getRank().then((res: any) => {
       self.rankData = res.data.data;
+      if (e === "click") {
+        self.alertPopup(
+          "rank",
+
+          self.rankData
+        );
+      }
     });
   }
   // 接口：获取用户信息
   getUserInfo(e: ShowContent) {
     const self = this;
+    // eslint-disable-next-line
     api.getUserInfo(e).then((res: any) => {
       localStorage.setItem(
         "hhl_festival_userInfo",
@@ -151,13 +226,7 @@ export default class App extends Vue {
   result(e: string) {
     switch (e) {
       case "rule":
-        this.alertPopup("popupBox", {
-          imgUrl: "",
-          name: "楼中月",
-          prize: "馅料",
-          buttonText: "好的"
-        });
-        // this.alertPopup("rule");
+        this.alertPopup("rule");
         break;
       case "myMoonCake":
         if (this.$route.name === "myMoonCake") {
@@ -166,11 +235,7 @@ export default class App extends Vue {
         this.$router.push("/myMoonCake");
         break;
       case "rank":
-        this.alertPopup(
-          "rank",
-
-          this.rankData
-        );
+        this.getRank("click");
         break;
     }
   }
@@ -186,7 +251,6 @@ export default class App extends Vue {
       content: f || null
     };
     this.isShowPopup = true;
-    console.log(this.isShowContent);
   }
   //关闭弹出框
   popupClick(e?: string) {
@@ -206,7 +270,8 @@ export default class App extends Vue {
 }
 html,
 body,
-ul {
+ul,
+p {
   margin: 0;
   padding: 0;
 }
@@ -217,4 +282,22 @@ ul {
   text-align: center;
   color: #2c3e50;
 }
+// .wait {
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
+//   position: fixed;
+//   top: 0;
+//   left: 0;
+//   width: 100%;
+//   height: 100%;
+//   z-index: 100;
+//   background-color: rgba(0, 0, 0, 0.5);
+//   div {
+//     background: url(./assets/loading-1.gif) no-repeat;
+//     background-size: 100% 100%;
+//     width: 10vw;
+//     height: 10vw;
+//   }
+// }
 </style>

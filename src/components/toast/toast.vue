@@ -1,6 +1,7 @@
 <template>
   <div class="toast">
-    <p>{{ msg }}</p>
+    <p v-show="msg !== 'wait'">{{ msg }}</p>
+    <div class="wait" v-show="msg === 'wait'"><div></div></div>
   </div>
 </template>
 <script>
@@ -15,7 +16,9 @@ export default {
   mounted() {
     setTimeout(() => {
       // 3s 后通过父级移除子元素的方式来移除该组件
-      this.$el.parentNode.removeChild(this.$el);
+      if (this.$el.parentNode) {
+        this.$el.parentNode.removeChild(this.$el);
+      }
     }, this.duration);
   }
 };
@@ -33,6 +36,20 @@ export default {
   color: #fff;
   z-index: 9999;
   background: transparent;
+  .wait {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    div {
+      background: url(../../assets/loading-1.gif) no-repeat;
+      background-size: 100% 100%;
+      width: 10vw;
+      height: 10vw;
+    }
+  }
   p {
     padding: 12px 22px;
     font-size: 18px;

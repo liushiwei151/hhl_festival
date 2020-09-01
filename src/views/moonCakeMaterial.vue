@@ -15,91 +15,111 @@
             :style="{ backgroundImage: 'url(' + a.imgName + ')' }"
           ></div>
           <div class="fontBox">
-            <div class="fontColor">{{ a.name }} ×{{ a.num }}</div>
+            <div class="fontColor">{{ a.name }} ×{{ a.numArray.length }}</div>
             <div class="fontConfirem" :class="{ fontYes: a.isConfirm }"></div>
           </div>
         </div>
       </li>
       <li class="moonCakeButton">
         <div @click="getmaterials"></div>
-        <div :class="{ gray: isShowButton }"></div>
+        <div :class="{ gray: isShowButton }" @click="makeCake"></div>
       </li>
     </ul>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
+import { Component, Vue, Inject } from "vue-property-decorator";
 const api = require("../api/index.js");
-interface materialObjData {
-  [key: string]: materialObjDatas[];
+interface MaterialObjData {
+  [key: number]: MaterialObjDatas[];
 }
-interface materialObjDatas {
+interface MaterialObjDatas {
   name: string;
   imgName: string;
   isConfirm: boolean;
-  num: number;
+  materialId: number;
+  materialCategoryId: number;
+  numArray: number[];
 }
 @Component({})
 export default class MoonCake extends Vue {
+  @Inject()
+  private popup!: Function;
   //材料的数据对象
-  materialObj: materialObjData = {
-    cake_crust: [
+  materialObj: MaterialObjData = {
+    1: [
       {
         name: "面粉",
         imgName: require("../assets/moonCake/flour.png"),
         isConfirm: false,
-        num: 0
+        materialId: 1,
+        materialCategoryId: 1,
+        numArray: []
       }
     ],
-    stuffing: [
+    2: [
       {
         name: "蛋黄",
         imgName: require("../assets/moonCake/yolk.png"),
         isConfirm: false,
-        num: 0
+        materialId: 2,
+        materialCategoryId: 2,
+        numArray: []
       },
       {
         name: "豆沙",
         imgName: require("../assets/moonCake/dousha.png"),
         isConfirm: false,
-        num: 0
+        materialId: 3,
+        materialCategoryId: 2,
+        numArray: []
       },
       {
         name: "莲蓉",
         imgName: require("../assets/moonCake/lotus_seed.png"),
         isConfirm: false,
-        num: 0
+        materialId: 4,
+        materialCategoryId: 2,
+        numArray: []
       },
       {
         name: "五仁",
         imgName: require("../assets/moonCake/wuren.png"),
         isConfirm: false,
-        num: 0
+        materialId: 5,
+        materialCategoryId: 2,
+        numArray: []
       }
     ],
-    pancake_noodles: [
+    3: [
       {
         name: "黄鹤楼",
         imgName: require("../assets/moonCake/hhl.png"),
         isConfirm: false,
-        num: 0
+        materialId: 6,
+        materialCategoryId: 3,
+        numArray: []
       },
       {
         name: "楼楼",
         imgName: require("../assets/moonCake/hhl_people.png"),
         isConfirm: false,
-        num: 0
+        materialId: 7,
+        materialCategoryId: 3,
+        numArray: []
       }
     ]
   };
+  //材料接口返回的userId
+  userId!: number;
 
   get isShowButton(): boolean {
-    let array = Object.values(this.materialObj);
-    let array1 = array.map(res => {
-      for (let i in res) {
+    const array = Object.values(this.materialObj);
+    const array1 = array.map(res => {
+      for (const i in res) {
         //todo 添加判断&& res[i].num > 0 只有当材料的数量大于0时才显示制作月饼按钮
-        if (res[i].isConfirm) {
+        if (res[i].isConfirm && res[i].numArray.length > 0) {
           return true;
         }
       }
@@ -110,20 +130,137 @@ export default class MoonCake extends Vue {
       return false;
     }
   }
+  mounted(): void {
+    this.checkMaterials();
+  }
+  //遍历材料并返回当前选中的材料如果传del则删除当前选中的材料中的第一个
+  forMaterials(e?: string): number[] {
+    const array = Object.values(this.materialObj);
+    const array1 = [],
+      array2 = [];
+    for (const i in array) {
+      array1.push(...array[i]);
+    }
+    for (const i in array1) {
+      if (array1[i].isConfirm) {
+        array2.push(array1[i]);
+      }
+    }
+    if (e === "del") {
+      for (const i in array2) {
+        for (const p in this.materialObj[array2[i].materialCategoryId]) {
+          if (
+            this.materialObj[array2[i].materialCategoryId][p].materialId ===
+            array2[i].materialId
+          ) {
+            this.materialObj[array2[i].materialCategoryId][p].numArray.shift();
+          }
+        }
+      }
+      console.log(array2);
+    }
+    const value = array2.map(res => {
+      return res.numArray[0];
+    });
+    return value;
+  }
+
+  //初始化材料
+  initMaterials() {
+    for (const i in this.materialObj) {
+      for (const p in this.materialObj[i]) {
+        this.materialObj[i][p].numArray = [];
+      }
+    }
+  }
+  //接口：制作月饼
+  makeCake() {
+    const self = this;
+    const userInfo = localStorage.getItem("hhl_festival_userInfo");
+    if (!self.isShowButton && userInfo) {
+      const info = JSON.parse(userInfo);
+      const data = {
+        userId: info.id,
+        data: {
+          openid: info.openid,
+          userMaterialIds: self.forMaterials()
+        }
+      };
+      // eslint-disable-next-line
+      api.makeCake(data).then((res: any) => {
+        const value = res.data.data;
+        self.forMaterials("del");
+        if (value.prizeType === 0) {
+          self.popup("popupBox", {
+            imgUrl: require("../assets/thanks.png"),
+            name: value.cakeName,
+            prize: "谢谢参与",
+            buttonText: "好的"
+          });
+        } else {
+          self.popup("popupBox", {
+            imgUrl: value.imgUrl,
+            name: value.cakeName,
+            prize: value.prizeName,
+            buttonText: "收下"
+          });
+        }
+        console.log(res.data.data);
+      });
+    }
+  }
+  //接口：查看材料
+  checkMaterials() {
+    const self = this;
+    const openid = localStorage.getItem("hhl_openId");
+    // eslint-disable-next-line
+    api.checkMaterials(openid).then((res: any) => {
+      const value = res.data.data;
+      self.initMaterials();
+      for (const i in value) {
+        const obj = value[i];
+        for (const p in self.materialObj[obj.materialCategoryId]) {
+          if (
+            self.materialObj[obj.materialCategoryId][p].materialId ===
+            obj.materialId
+          ) {
+            self.materialObj[obj.materialCategoryId][p].numArray.push(obj.id);
+          }
+        }
+      }
+    });
+  }
   //接口：收集材料
   getmaterials() {
-    let openid = localStorage.getItem("hhl_openId");
-    api.getmaterials(openid).then((res: any) => {
-      console.log(res);
+    const self = this;
+    const openid = localStorage.getItem("hhl_openId");
+
+    // eslint-disable-next-line
+    api.getMaterials(openid).then((res: any) => {
+      const value = res.data.data;
+      for (const i in self.materialObj[value.materialCategoryId]) {
+        if (
+          self.materialObj[value.materialCategoryId][i].materialId ===
+          value.materialId
+        ) {
+          self.materialObj[value.materialCategoryId][i].numArray.push(value.id);
+        }
+      }
+      self.popup("popupBox", {
+        imgUrl: require("../assets/popup/" + value.materialId + ".png"),
+        name: "material",
+        prize: value.materialName,
+        buttonText: "收下"
+      });
     });
   }
   //选中材料
-  choseMaterial(e: string, f: number) {
+  choseMaterial(e: number, f: number) {
     if (this.materialObj[e][f].isConfirm) {
       this.materialObj[e][f].isConfirm = false;
       return;
     }
-    for (let i in this.materialObj[e]) {
+    for (const i in this.materialObj[e]) {
       this.materialObj[e][i].isConfirm = false;
     }
     this.materialObj[e][f].isConfirm = true;
@@ -157,7 +294,7 @@ export default class MoonCake extends Vue {
   i {
     display: block;
   }
-  .cake_crust {
+  .cakeCrust {
     background: url(../assets/moonCake/cake_crust.png) no-repeat;
     @titleFont();
   }
@@ -165,7 +302,7 @@ export default class MoonCake extends Vue {
     background: url(../assets/moonCake/stuffing.png) no-repeat;
     @titleFont();
   }
-  .pancake_noodles {
+  .pancakeNoodles {
     background: url(../assets/moonCake/pancake_noodles.png) no-repeat;
     @titleFont();
   }

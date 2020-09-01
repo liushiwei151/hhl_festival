@@ -46,27 +46,79 @@
       v-show="isShowContent.contentName === 'shareCollection'"
     ></div>
     <!-- 所有奖品材料弹框 -->
-    <div class="popupBox" v-show="isShowContent.contentName === 'popupBox'">
-      <div @click.stop="closePopup('rule')" class="closePopup"></div>
+    <div class="popupBox" v-if="isShowContent.contentName === 'popupBox'">
+      <div @click.stop="closePopup('popupBox')" class="closePopup"></div>
+      <div
+        class="popupImg"
+        :style="{
+          backgroundImage: 'url(' + isShowContent.content.imgUrl + ')'
+        }"
+      ></div>
+      <!-- 获得材料 -->
+      <div
+        class="popupMaterial"
+        v-if="isShowContent.content.name === 'material'"
+      >
+        <p>恭喜您!</p>
+        <p>
+          获得<span>{{ isShowContent.content.prize }}</span
+          >一份
+        </p>
+        <button @click.stop="closePopup('popupBox')">
+          {{ isShowContent.content.buttonText }}
+        </button>
+      </div>
+      <!-- 获得奖品 -->
+      <div
+        class="popupPrize"
+        v-if="
+          isShowContent.content.name !== 'material' &&
+            isShowContent.content.name !== 'thanks' &&
+            isShowContent.content.prize !== '谢谢参与'
+        "
+      >
+        <p>您制作完成{{ isShowContent.content.name }}一个!</p>
+        <p>恭喜您获得</p>
+        <p>{{ isShowContent.content.prize }}</p>
+        <button @click.stop="closePopup('popupBox')">
+          {{ isShowContent.content.buttonText }}
+        </button>
+      </div>
+      <!-- 谢谢参与 -->
+      <div
+        class="popupThanks"
+        v-if="isShowContent.content.prize === '谢谢参与'"
+      >
+        <p>
+          您制作完成<span>{{ isShowContent.content.name }}</span
+          >一个!
+        </p>
+        <p>谢谢您的参与!</p>
+        <button @click.stop="closePopup('popupBox')">
+          {{ isShowContent.content.buttonText }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Emit, Prop } from "vue-property-decorator";
-interface showContent {
+interface ShowContent {
   [key: string]: string | number;
 }
-interface content {
+interface ContCents {
   contentName: string;
   content: Content;
 }
-type Content = showContent[] | null | showContent;
+type Content = ShowContent[] | null | ShowContent;
 
 @Component({})
-export default class showPopup extends Vue {
-  @Prop() isShowContent!: content;
-  @Emit("popupClick") closePopups(e: string) {}
+export default class ShowPopup extends Vue {
+  @Prop() isShowContent!: ContCents;
+  @Emit("popupClick") closePopups(e: string) {
+    console.log(e);
+  }
 
   closePopup(e: string) {
     this.closePopups(e);
@@ -93,16 +145,115 @@ export default class showPopup extends Vue {
   display: flex;
   justify-content: center;
   align-items: center;
+
   .popupBox {
     background: url(../assets/popup/popupBg.png) no-repeat;
     background-size: 100% 100%;
     width: 100vw;
-    height: 80vh;
+    height: 116vw;
     position: absolute;
     top: 0;
+    span {
+      color: rgb(240, 85, 76);
+      font-size: 7vw;
+    }
     .closePopup {
-      top: 18vh;
+      top: 24vw;
       right: 12vw;
+    }
+    .popupThanks {
+      position: absolute;
+      top: 78vw;
+      width: 70vw;
+      left: 15vw;
+      font-weight: bold;
+      font-size: 5vw;
+      p {
+        white-space: nowrap;
+      }
+      p:first-of-type {
+        margin-bottom: 2vw;
+      }
+      button {
+        border: none;
+        outline: none;
+        background: url(../assets/popup/buttonBox.png) no-repeat;
+        background-size: 100% 100%;
+        width: 30vw;
+        height: 11vw;
+        color: #b84635;
+        font-weight: bold;
+        line-height: 10vw;
+        margin-top: 3vw;
+        white-space: nowrap;
+      }
+    }
+    .popupImg {
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      width: 40vw;
+      height: 40vw;
+      position: absolute;
+      left: 30vw;
+      top: 25vw;
+    }
+    .popupPrize {
+      position: absolute;
+      top: 75vw;
+      width: 70vw;
+      left: 15vw;
+      font-weight: bold;
+      font-size: 4.2vw;
+      p {
+        white-space: nowrap;
+      }
+      p:nth-of-type(2) {
+        font-size: 5vw;
+      }
+      p:last-of-type {
+        font-size: 6vw;
+        color: rgb(240, 85, 76);
+      }
+      button {
+        border: none;
+        outline: none;
+        background: url(../assets/popup/buttonBox.png) no-repeat;
+        background-size: 100% 100%;
+        width: 30vw;
+        height: 11vw;
+        color: #b84635;
+        font-weight: bold;
+        line-height: 10vw;
+        margin-top: 2vw;
+        white-space: nowrap;
+      }
+    }
+    .popupMaterial {
+      position: absolute;
+      top: 75vw;
+      width: 70vw;
+      left: 15vw;
+      font-weight: bold;
+      font-size: 6vw;
+      p {
+        span {
+          color: rgb(240, 85, 76);
+          font-size: 10vw;
+        }
+      }
+      button {
+        border: none;
+        outline: none;
+        background: url(../assets/popup/buttonBox.png) no-repeat;
+        background-size: 100% 100%;
+        width: 30vw;
+        height: 11vw;
+        color: #b84635;
+        font-weight: bold;
+        line-height: 10vw;
+        margin-top: 2vw;
+        white-space: nowrap;
+      }
     }
   }
   .shareCollection {
