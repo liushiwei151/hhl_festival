@@ -8,8 +8,18 @@
 import { Component, Vue } from "vue-property-decorator";
 @Component({})
 export default class Home extends Vue {
+  //是否允许跳转页面
+  isClick = false;
+  mounted(): void {
+    const self = this;
+    this.$nextTick(() => {
+      self.isClick = true;
+    });
+  }
   gotoWeb(e: string) {
-    this.$router.push(e);
+    if (this.isClick) {
+      this.$router.push(e);
+    }
   }
 }
 </script>

@@ -55,6 +55,7 @@ axios.interceptors.request.use(
   },
   error => {
     // 对请求错误做些什么
+    tip(error);
     return Promise.reject(error);
   }
 );
@@ -63,7 +64,6 @@ axios.interceptors.response.use(
   // 请求成功
   res => {
     wait(false);
-    console.log(Vue.prototype);
     if (
       res.data.code === 200 ||
       res.data.code === 1001 ||

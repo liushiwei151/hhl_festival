@@ -31,7 +31,7 @@ module.exports = {
   },
   chainWebpack: config => {
     config.plugin("html").tap(args => {
-      args[0].title = "流逝之光";
+      args[0].title = "月满团圆";
       return args;
     });
   },

@@ -107,8 +107,8 @@ export default class App extends Vue {
     const self = this;
     let url = location.href.split("#")[0];
     localStorage.clear();
-    url =
-      "http://qrhhl.yunyutian.cn/cake/index.html?openid=oXslc067VusqD_qfe_Vh9j1oEBVc";
+    // url =
+    // "http://qrhhl.yunyutian.cn/cake/index.html?openid=oXslc067VusqD_qfe_Vh9j1oEBVc";
     const openId = this.setOpenId(url);
     const share = {
       title: "月满团圆，感恩有你",
