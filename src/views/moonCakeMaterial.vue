@@ -237,21 +237,33 @@ export default class MoonCake extends Vue {
 
     // eslint-disable-next-line
     api.getMaterials(openid).then((res: any) => {
+      console.log(res.data.code);
+      const code = res.data.code;
       const value = res.data.data;
-      for (const i in self.materialObj[value.materialCategoryId]) {
-        if (
-          self.materialObj[value.materialCategoryId][i].materialId ===
-          value.materialId
-        ) {
-          self.materialObj[value.materialCategoryId][i].numArray.push(value.id);
+      if (code === 200) {
+        for (const i in self.materialObj[value.materialCategoryId]) {
+          if (
+            self.materialObj[value.materialCategoryId][i].materialId ===
+            value.materialId
+          ) {
+            self.materialObj[value.materialCategoryId][i].numArray.push(
+              value.id
+            );
+          }
         }
+        self.popup("popupBox", {
+          imgUrl: require("../assets/popup/" + value.materialId + ".png"),
+          name: "material",
+          prize: value.materialName,
+          buttonText: "收下"
+        });
+      } else if (code === 1001) {
+        self.popup("shareCollection");
+      } else if (code === 1002) {
+        self.popup("fourCollectionEnd");
+      } else if (code === 1003) {
+        self.popup("collectionEnd");
       }
-      self.popup("popupBox", {
-        imgUrl: require("../assets/popup/" + value.materialId + ".png"),
-        name: "material",
-        prize: value.materialName,
-        buttonText: "收下"
-      });
     });
   }
   //选中材料

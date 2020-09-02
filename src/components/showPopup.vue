@@ -260,7 +260,7 @@ export default class ShowPopup extends Vue {
     background: url(../assets/popup/shareCollection.png) no-repeat;
     background-size: 100% 100%;
     width: 75vw;
-    height: 90vh;
+    height: 125vw;
   }
   .collectionEnd {
     background: url(../assets/popup/collectionEnd.png) no-repeat;

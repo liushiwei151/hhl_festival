@@ -66,7 +66,8 @@ const synthesis = query => {
 const shareGame = query => {
   return api({
     url: "/huanghelou1916-cake/api/frequencies/share/" + query.openid,
-    mehod: "post"
+    method: "post",
+    data: query
   });
 };
 export {

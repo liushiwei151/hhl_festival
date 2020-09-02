@@ -3,7 +3,6 @@
  */
 import Axios from "axios";
 import Vue from "vue";
-
 //链接
 const axios = Axios.create({
   // baseURL: "test", //本地测试
@@ -64,7 +63,13 @@ axios.interceptors.response.use(
   // 请求成功
   res => {
     wait(false);
-    if (res.data.code === 200) {
+    console.log(Vue.prototype);
+    if (
+      res.data.code === 200 ||
+      res.data.code === 1001 ||
+      res.data.code === 1002 ||
+      res.data.code === 1003
+    ) {
       return Promise.resolve(res);
     } else {
       errorHandle(res.data.code, res.data.msg);

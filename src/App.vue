@@ -75,11 +75,11 @@ export default class App extends Vue {
     }
   }
   created(): void {
-    this.getJsSign();
     if (this.$route.name !== "Home") {
       this.$router.push("/");
       this.showButtonName = ["rule", "myMoonCake", "rank"];
     }
+    this.getJsSign();
   }
   //显隐wait
   showWait(e: boolean) {
@@ -91,10 +91,11 @@ export default class App extends Vue {
     return e.split("=")[1];
   }
   //接口：分享游戏
-  shareGame(e: string) {
+  shareGame() {
     const self = this;
+    const openids = window.localStorage.getItem("hhl_openId");
     // eslint-disable-next-line
-    api.shareGame(e).then((res: any) => {
+    api.shareGame({ openid: openids }).then((res: any) => {
       self.$Toast({
         msg: "分享成功",
         duration: 1500
@@ -110,12 +111,12 @@ export default class App extends Vue {
       "http://qrhhl.yunyutian.cn/cake/index.html?openid=oXslc067VusqD_qfe_Vh9j1oEBVc";
     const openId = this.setOpenId(url);
     const share = {
-      title: "中秋待定",
-      desc: "中秋待定",
-      // link: "https://wx.hhl1916.com/huanghelou1916-center/wx/gCode?name=toBoat",
+      title: "月满团圆，感恩有你",
+      desc: "跟着楼楼做月饼，惊喜大奖等你赢！",
+      // link: "https://wx.hhl1916.com/huanghelou1916-center/wx/gCode?name=toCake",
       link:
-        "http://qrhhl.yunyutian.cn/huanghelou1916-center/wx/gCode?name=toBoat",
-      imgUrl: "https://pic.cwyyt.cn/upload/img/20200612/1623222322_longzhou.jpg"
+        "http://qrhhl.yunyutian.cn/huanghelou1916-center/wx/gCode?name=toCake",
+      imgUrl: "https://pic.cwyyt.cn/upload/20200902/143606366_moon.jpg"
     };
     // eslint-disable-next-line
     api.getjsSdk(url).then((res: any) => {
@@ -155,7 +156,7 @@ export default class App extends Vue {
           imgUrl: share.imgUrl, // 分享图标
           success: function() {
             // 设置成功
-            self.shareGame(openId);
+            self.shareGame();
           }
         });
         // eslint-disable-next-line
@@ -168,7 +169,7 @@ export default class App extends Vue {
           dataUrl: "", // 如果type是music或video，则要提供数据链接，默认为空
           success: function() {
             // 设置成功
-            self.shareGame(openId);
+            self.shareGame();
           }
         });
         // eslint-disable-next-line
