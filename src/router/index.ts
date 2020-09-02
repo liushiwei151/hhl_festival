@@ -9,6 +9,7 @@ import light from "../views/light.vue";
 import group from "../views/group.vue";
 import curve from "../views/curve.vue";
 import texture from "../views/texture.vue";
+import cameraBox from "../views/camera.vue";
 
 Vue.use(VueRouter);
 
@@ -57,6 +58,11 @@ const routes: Array<RouteConfig> = [
     path: "/texture",
     name: "texture",
     component: texture
+  },
+  {
+    path: "/camera",
+    name: "cameraBox",
+    component: cameraBox
   }
 ];
 
