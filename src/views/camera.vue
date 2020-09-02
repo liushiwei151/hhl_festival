@@ -18,10 +18,12 @@ export default class cameraBox extends Vue {
   mesh: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> | null = null;
   mounted() {
     this.init();
+    this.resize();
   }
+
   //绘制一个方块
   blockShaow(e: THREE.Scene) {
-    const geometry = new THREE.BoxGeometry(400, 1000, 400);
+    const geometry = new THREE.BoxGeometry(200, 500, 200);
     const material = new THREE.MeshPhongMaterial({
       color: 0x0000ff,
       specular: 0x444444, //高光部分的颜色
@@ -90,6 +92,30 @@ export default class cameraBox extends Vue {
       this.camera,
       this.renderer.domElement
     );
+  }
+  //窗口自适应渲染
+  resize() {
+    const self = this;
+    // onresize 事件会在窗口被调整大小时发生
+    window.onresize = function() {
+      // 重置渲染器输出画布canvas尺寸
+      if (self.renderer !== null && self.camera !== null) {
+        self.renderer.setSize(window.innerWidth, window.innerHeight);
+        //透视投影相机自适应渲染
+        //  self.camera.aspect = window.innerWidth/window.innerHeight;
+        // 重置相机投影的相关参数
+        const k = window.innerWidth / window.innerHeight; //窗口宽高比
+        const s = 200;
+        self.camera.left = -s * k;
+        self.camera.right = s * k;
+        self.camera.top = s;
+        self.camera.bottom = -s;
+        // 渲染器执行render方法的时候会读取相机对象的投影矩阵属性projectionMatrix
+        // 但是不会每渲染一帧，就通过相机的属性计算投影矩阵(节约计算资源)
+        // 如果相机的一些属性发生了变化，需要执行updateProjectionMatrix ()方法更新相机的投影矩阵
+        self.camera.updateProjectionMatrix();
+      }
+    };
   }
   //动画旋转渲染e场景f相机
   renders() {
