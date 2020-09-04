@@ -10,6 +10,9 @@ import group from "../views/group.vue";
 import curve from "../views/curve.vue";
 import texture from "../views/texture.vue";
 import cameraBox from "../views/camera.vue";
+import tracks from "../views/track.vue";
+import bone from "../views/bone.vue";
+import model from "../views/model.vue";
 
 Vue.use(VueRouter);
 
@@ -63,6 +66,21 @@ const routes: Array<RouteConfig> = [
     path: "/camera",
     name: "cameraBox",
     component: cameraBox
+  },
+  {
+    path: "/tracks",
+    name: "tracks",
+    component: tracks
+  },
+  {
+    path: "/bone",
+    name: "bone",
+    component: bone
+  },
+  {
+    path: "/model",
+    name: "model",
+    component: model
   }
 ];
 

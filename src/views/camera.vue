@@ -5,6 +5,7 @@
 import * as THREE from "three";
 import "../common/three/OrbitControls";
 import { Component, Vue } from "vue-property-decorator";
+import mokeData from "../json/data.js";
 @Component({})
 export default class cameraBox extends Vue {
   //场景
@@ -16,6 +17,9 @@ export default class cameraBox extends Vue {
   nowDate: number = Number(new Date());
   //矩形模型
   mesh: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> | null = null;
+  //雨滴数组
+  group: any;
+
   mounted() {
     this.init();
     this.resize();
@@ -33,12 +37,155 @@ export default class cameraBox extends Vue {
     demo.castShadow = true;
     e.add(demo);
   }
+  //精灵模型
+  sprite(e: THREE.Scene) {
+    var texture = new THREE.TextureLoader().load(
+      require("../static/sprite2.png")
+    );
+    // 创建精灵材质对象SpriteMaterial
+    var spriteMaterial = new THREE.SpriteMaterial({
+      color: 0xff00ff, //设置精灵矩形区域颜色
+      rotation: Math.PI / 4, //旋转精灵对象45度，弧度值
+      map: texture //设置精灵纹理贴图
+    });
+    // 创建精灵模型对象，不需要几何体geometry参数
+    var sprite = new THREE.Sprite(spriteMaterial);
+    e.add(sprite);
+    // 控制精灵大小，比如可视化中精灵大小表征数据大小
+    sprite.scale.set(10, 10, 1); //// 只需要设置x、y两个分量就可以
+  }
+  //简略版pm2.5
+  pm(e: THREE.Scene) {
+    var texture = new THREE.TextureLoader().load(
+      require("../static/sprite2.png")
+    );
+    // 创建组对象，包含所有精灵对象
+    let group = new THREE.Group();
+    //遍历数据
+    mokeData.data.forEach((elem: any) => {
+      console.log(elem);
+      // 精灵材质
+      var spriteMaterial = new THREE.SpriteMaterial({
+        map: texture, //设置精灵纹理贴图
+        transparent: true,
+        opacity: 0.5
+      });
+      // 创建精灵模型对象
+      var sprite = new THREE.Sprite(spriteMaterial);
+      group.add(sprite);
+      // 控制精灵大小   使用PM2.5大小设置精灵模型的大小
+      // 注意适当缩放pm2.5大小,以便得到更好的显示效果
+      var k = elem.value / 10;
+      sprite.scale.set(k, k, 1);
+      //获得城市坐标设置精灵模型对象的位置
+      sprite.position.set(elem.coordinate[0], elem.coordinate[1], 0);
+    });
+    console.log(group);
+    // 中国城市坐标整体的几何中心不在坐标原点，需要适当的平移
+    e.add(group); //把精灵群组插入场景中
+  }
+  //树林效果
+  tree(e: THREE.Scene) {
+    /**
+     * 精灵创建树林效果
+     */
+    // 加载树纹理贴图
+    var textureTree = new THREE.TextureLoader().load(
+      require("../static/tree.png")
+    );
+    // 批量创建表示一个树的精灵模型
+    for (let i = 0; i < 100; i++) {
+      var spriteMaterial = new THREE.SpriteMaterial({
+        map: textureTree //设置精灵纹理贴图
+      });
+      // 创建精灵模型对象
+      var sprite = new THREE.Sprite(spriteMaterial);
+      e.add(sprite);
+      // 控制精灵大小,
+      sprite.scale.set(100, 100, 1); //// 只需要设置x、y两个分量就可以
+      var k1 = Math.random() - 0.5;
+      var k2 = Math.random() - 0.5;
+      // 设置精灵模型位置，在xoz平面上随机分布
+      sprite.position.set(1000 * k1, 50, 1000 * k2);
+    }
+  }
+  //草地
+  grass(e: THREE.Scene) {
+    /**
+     * 创建一个草地地面
+     */
+    var geometry = new THREE.PlaneGeometry(1000, 1000); //矩形平面
+    // 加载草地纹理贴图
+    var texture = new THREE.TextureLoader().load(
+      require("../static/grass.jpg")
+    );
+    // 设置纹理的重复模式
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    // uv两个方向纹理重复数量
+    texture.repeat.set(10, 10);
+    var material = new THREE.MeshLambertMaterial({
+      // color: 0x777700
+      map: texture
+    });
+    var mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+    e.add(mesh); //网格模型添加到场景中
+    mesh.rotateX(-Math.PI / 2);
+  }
+  // 雨滴
+  rain(e: THREE.Scene) {
+    /**
+     * 精灵创建下雨效果
+     */
+    // 创建一个组表示所有的雨滴
+    var group = new THREE.Group();
+    // 加载雨滴理贴图
+    var textureTree = new THREE.TextureLoader().load(
+      require("../static/rain.png")
+    );
+    // 批量创建表示雨滴的精灵模型
+    for (let i = 0; i < 400; i++) {
+      var spriteMaterial = new THREE.SpriteMaterial({
+        map: textureTree //设置精灵纹理贴图
+      });
+      // 创建精灵模型对象
+      var sprite = new THREE.Sprite(spriteMaterial);
+      group.add(sprite);
+      // 控制精灵大小,
+      sprite.scale.set(8, 10, 1); //// 只需要设置x、y两个分量就可以
+      var k1 = Math.random() - 0.5;
+      var k2 = Math.random() - 0.5;
+      var k3 = Math.random() - 0.5;
+      // 设置精灵模型位置，在整个空间上上随机分布
+      sprite.position.set(1000 * k1, 300 * k3, 1000 * k2);
+    }
+    e.add(group);
+    this.group = group;
+  }
+  //渲染雨滴动画
+  renderRain() {
+    // 每次渲染遍历雨滴群组，刷新频率30~60FPS，两帧时间间隔16.67ms~33.33ms
+    // 每次渲染都会更新雨滴的位置，进而产生动画效果
+    this.group.children.forEach(sprite => {
+      // 雨滴的y坐标每次减1
+      sprite.position.y -= 2;
+      if (sprite.position.y < 0) {
+        // 如果雨滴落到地面，重置y，从新下落
+        sprite.position.y = 200;
+      }
+    });
+  }
   init() {
     const home = document.getElementById("cameraBox");
     // 创建场景对象scene
     this.scene = new THREE.Scene();
     /**添加的各种模型 */
-    this.blockShaow(this.scene);
+    // this.blockShaow(this.scene);
+    // this.sprite(this.scene);
+    // this.pm(this.scene);
+    // this.tree(this.scene);
+    this.grass(this.scene);
+    this.rain(this.scene);
     //点光源
     let point = new THREE.PointLight(0xffffff);
     point.position.set(150, 150, 150); //点光源位置
@@ -77,7 +224,7 @@ export default class cameraBox extends Vue {
     const height = window.innerHeight; //窗口高度
     /**透视投影相机对象*/
     this.camera = new THREE.PerspectiveCamera(60, width / height, 1, 1000);
-    this.camera.position.set(200, 300, 200); //设置相机位置
+    this.camera.position.set(292, 109, 268); //设置相机位置
     this.camera.lookAt(this.scene.position); //设置相机方向(指向的场景对象)
     /**
      * 创建渲染对象
@@ -88,6 +235,7 @@ export default class cameraBox extends Vue {
     (home as HTMLElement).appendChild(this.renderer.domElement); //body元素中插入canvas对象
     //执行渲染操作   指定场景、相机作为参数
     this.renders();
+    this.renderRain(this.renderer);
     const controls = new THREE.OrbitControls(
       this.camera,
       this.renderer.domElement
@@ -125,6 +273,9 @@ export default class cameraBox extends Vue {
     let time: number = Number(new Date());
     let t = this.nowDate - time;
     this.nowDate = time;
+    if (this.group) {
+      this.renderRain();
+    }
     requestAnimationFrame(this.renders);
     this.renderer.render(this.scene, this.camera);
     this.renderer.shadowMap.enabled = true;
