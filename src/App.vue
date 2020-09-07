@@ -107,6 +107,7 @@ export default class App extends Vue {
     const self = this;
     let url = location.href.split("#")[0];
     localStorage.clear();
+    //todo 本地
     // url =
     // "http://qrhhl.yunyutian.cn/cake/index.html?openid=oXslc067VusqD_qfe_Vh9j1oEBVc";
     const openId = this.setOpenId(url);
@@ -137,6 +138,31 @@ export default class App extends Vue {
       });
       // eslint-disable-next-line
       (self as any).wx.ready(function() {
+        self.$Toast({
+          msg: "wait",
+          duration: "9999990"
+        });
+        // eslint-disable-next-line
+        (self as any).wx.getLocation({
+          type: "wgs84",
+          // eslint-disable-next-line
+          success: function(res: any) {
+            const data = {
+              openid: openId,
+              latitude: res.latitude || 0,
+              longitude: res.longitude || 0
+            };
+            self.getUserInfo(data);
+          },
+          fail: function() {
+            const data = {
+              openid: openId,
+              latitude: 0,
+              longitude: 0
+            };
+            self.getUserInfo(data);
+          }
+        });
         // eslint-disable-next-line
         (self as any).wx.hideMenuItems({
           menuList: [
@@ -172,27 +198,6 @@ export default class App extends Vue {
             self.shareGame();
           }
         });
-        // eslint-disable-next-line
-        (self as any).wx.getLocation({
-          type: "wgs84",
-          // eslint-disable-next-line
-          success: function(res: any) {
-            const data = {
-              openid: openId,
-              latitude: res.latitude || 0,
-              longitude: res.longitude || 0
-            };
-            self.getUserInfo(data);
-          },
-          fail: function() {
-            const data = {
-              openid: openId,
-              latitude: 0,
-              longitude: 0
-            };
-            self.getUserInfo(data);
-          }
-        });
       });
     });
   }
@@ -214,6 +219,10 @@ export default class App extends Vue {
   // 接口：获取用户信息
   getUserInfo(e: ShowContent) {
     const self = this;
+    self.$Toast({
+      msg: "wait",
+      duration: "0"
+    });
     // eslint-disable-next-line
     api.getUserInfo(e).then((res: any) => {
       localStorage.setItem(

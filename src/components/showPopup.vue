@@ -135,7 +135,7 @@ export default class ShowPopup extends Vue {
   top: -3vw;
 };
 .showPopup {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.8);
   position: fixed;
   top: 0;
   left: 0;
@@ -260,7 +260,9 @@ export default class ShowPopup extends Vue {
     background: url(../assets/popup/shareCollection.png) no-repeat;
     background-size: 100% 100%;
     width: 75vw;
-    height: 125vw;
+    height: 113vw;
+    position: absolute;
+    top: 0;
   }
   .collectionEnd {
     background: url(../assets/popup/collectionEnd.png) no-repeat;

@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <button @click="gotoWeb('moonCake')"></button>
+    <button @click="gotoWeb('moonCake')" :class="{ gray: !isClick }"></button>
   </div>
 </template>
 
@@ -11,10 +11,19 @@ export default class Home extends Vue {
   //是否允许跳转页面
   isClick = false;
   mounted(): void {
+    this.loopClick();
+  }
+  // 确认是否已经更新local
+  loopClick() {
     const self = this;
-    this.$nextTick(() => {
-      self.isClick = true;
-    });
+    setTimeout(() => {
+      const value = localStorage.getItem("hhl_festival_userInfo");
+      if (value === null) {
+        self.loopClick();
+      } else {
+        self.isClick = true;
+      }
+    }, 500);
   }
   gotoWeb(e: string) {
     if (this.isClick) {
@@ -30,6 +39,9 @@ export default class Home extends Vue {
   width: 100vw;
   height: 100vh;
   position: relative;
+  .gray {
+    filter: grayscale(100%);
+  }
   button {
     border: none;
     outline: none;
