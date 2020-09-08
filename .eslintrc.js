@@ -23,6 +23,7 @@ module.exports = {
     //不检测函数前是否有空客
     "space-before-function-paren": 0,
     //允许使用this的别名，如self等
-    "@typescript-eslint/no-this-alias": 0
+    "@typescript-eslint/no-this-alias": 0,
+    "@typescript-eslint/no-var-requires": 0
   }
 };
