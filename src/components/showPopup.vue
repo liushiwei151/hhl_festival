@@ -2,6 +2,40 @@
   <div class="showPopup" @click.self="closePopup('box')">
     <!-- 规则弹窗 -->
     <div class="actRule" v-show="isShowContent.contentName === 'rule'">
+      <div class="ruleContent">
+        <p class="red">
+          <span class="red bold">活动时间：</span>2020年9月11日-24日
+        </p>
+        <p>
+          <span class="red bold"> 活动内容：</span
+          >楼主每天可参与活动收集月饼食材，食材分为“饼皮”、“馅料”、“饼面”三个部分，三个部分各集齐一份即可制作一个月饼，并获得一次抽奖机会。每四个不一样的月饼即可生成一个月饼礼盒。获得月饼礼盒后即可获得一次抽大奖的机会，数量有限，先到先得！
+        </p>
+        <p class="red bold">活动流程：</p>
+        <p>
+          1）每天进入活动页面，即获得3次收集食材的机会，每次会随机收集一份食材。3次机会使用完毕后，还可通过分享活动给好友或分享到朋友圈，额外获得1次收集次数。参与黄鹤楼扫码验真获得，也可以额外获得收集次数，最高3次；
+        </p>
+        <p>
+          2）每集齐一套食材，即“饼皮”+“馅料”+“饼面”，就可以、制作一个月饼。包括楼楼蛋黄月饼、楼楼豆沙月饼、楼楼五仁月饼、楼楼莲蓉月饼、黄鹤楼蛋黄月饼、黄鹤楼豆沙月饼、黄鹤楼五仁月饼、黄鹤楼莲蓉月饼。每生成一个月饼就有一次抽奖机会；
+        </p>
+        <p>
+          3）在“我的月饼”中可以查看所有制作完成的月饼。每集齐四个不同的月饼，即可生成一份“楼中月”月饼礼盒。并获得一次抽大奖的机会。
+        </p>
+        <p>
+          4）活动结束后，在月饼排行榜中，排名前100的用户，即可获得大奖一份。
+        </p>
+        <p class="red">奖品设置:</p>
+        <ul>
+          <li class="red"><span class="bold">月饼排行：</span>美的电烤箱</li>
+          <li class="red">
+            <span class="bold">礼盒抽奖：</span
+            >博洋羊毛被、飞利浦手持吸尘器、泰昌足 浴器、欧姆龙体温计、小熊养生壶
+          </li>
+          <li class="red">
+            <span class="bold">月饼抽奖：</span>威露士衣物洗护套装、天堂晴雨伞
+          </li>
+        </ul>
+        <p>本活动最终解释权由黄鹤楼1916公众号所有。</p>
+      </div>
       <div @click.stop="closePopup('rule')" class="closePopup"></div>
     </div>
     <!-- 排行榜 -->
@@ -53,6 +87,11 @@
         :style="{
           backgroundImage: 'url(' + isShowContent.content.imgUrl + ')'
         }"
+        :class="{ popupT: isShowContent.content.prize === '谢谢参与' }"
+      ></div>
+      <div
+        class="hhlImg"
+        v-if="isShowContent.content.prize !== '谢谢参与'"
       ></div>
       <!-- 获得材料 -->
       <div
@@ -155,7 +194,7 @@ export default class ShowPopup extends Vue {
     top: 0;
     span {
       color: rgb(240, 85, 76);
-      font-size: 7vw;
+      font-size: 6vw;
     }
     .closePopup {
       top: 24vw;
@@ -163,11 +202,11 @@ export default class ShowPopup extends Vue {
     }
     .popupThanks {
       position: absolute;
-      top: 78vw;
+      top: 81vw;
       width: 70vw;
       left: 15vw;
       font-weight: bold;
-      font-size: 5vw;
+      font-size: 4.5vw;
       p {
         white-space: nowrap;
       }
@@ -188,6 +227,15 @@ export default class ShowPopup extends Vue {
         white-space: nowrap;
       }
     }
+    .hhlImg {
+      background: url(../assets/popup/hhlImg.png) no-repeat;
+      background-size: 100% 100%;
+      width: 20vw;
+      height: 25vw;
+      position: absolute;
+      top: 52vw;
+      right: 19vw;
+    }
     .popupImg {
       background-repeat: no-repeat;
       background-size: 100% 100%;
@@ -195,11 +243,15 @@ export default class ShowPopup extends Vue {
       height: 40vw;
       position: absolute;
       left: 30vw;
-      top: 25vw;
+      top: 31vw;
+    }
+    .popupT {
+      height: 50vw;
+      top: 29vw;
     }
     .popupPrize {
       position: absolute;
-      top: 75vw;
+      top: 79vw;
       width: 70vw;
       left: 15vw;
       font-weight: bold;
@@ -230,7 +282,7 @@ export default class ShowPopup extends Vue {
     }
     .popupMaterial {
       position: absolute;
-      top: 75vw;
+      top: 79vw;
       width: 70vw;
       left: 15vw;
       font-weight: bold;
@@ -238,7 +290,7 @@ export default class ShowPopup extends Vue {
       p {
         span {
           color: rgb(240, 85, 76);
-          font-size: 10vw;
+          font-size: 8vw;
         }
       }
       button {
@@ -253,6 +305,7 @@ export default class ShowPopup extends Vue {
         line-height: 10vw;
         margin-top: 2vw;
         white-space: nowrap;
+        font-size: 5vw;
       }
     }
   }
@@ -384,6 +437,26 @@ export default class ShowPopup extends Vue {
     width: 85vw;
     height: 85vh;
     position: relative;
+    .ruleContent {
+      position: absolute;
+      width: 75vw;
+      height: 75vh;
+      left: 5vw;
+      top: 7vh;
+      overflow: hidden;
+      overflow-y: auto;
+      font-size: 3vw;
+      text-align: left;
+      ul {
+        padding-left: 5vw;
+      }
+      .red {
+        color: rgb(207, 0, 0);
+      }
+      .bold {
+        font-weight: bold;
+      }
+    }
   }
   .closePopup {
     background: url(../assets/rule_button.png) no-repeat;

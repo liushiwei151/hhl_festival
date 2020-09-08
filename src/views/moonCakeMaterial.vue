@@ -3,7 +3,7 @@
     <div class="bg"></div>
     <ul>
       <li v-for="(item, index) in materialObj" :key="index">
-        <i :class="index"></i>
+        <i :class="imgName[index - 1]"></i>
         <div
           v-for="(a, b) in item"
           :key="a.imgName"
@@ -46,7 +46,9 @@ interface MaterialObjDatas {
 export default class MoonCake extends Vue {
   @Inject()
   private popup!: Function;
-  //材料的数据对象
+  //标题图片名字
+  imgName = ["cakeCrust", "stuffing", "pancakeNoodles"];
+  //材料的数据对象 对象的key值1，2，3代表下标和种类id和图片名字下标
   materialObj: MaterialObjData = {
     1: [
       {
@@ -251,10 +253,12 @@ export default class MoonCake extends Vue {
             );
           }
         }
+        const titleArray = ["饼皮", "馅料", "饼面"];
         self.popup("popupBox", {
           imgUrl: require("../assets/popup/" + value.materialId + ".png"),
           name: "material",
-          prize: value.materialName,
+          prize:
+            titleArray[value.materialCategoryId - 1] + "-" + value.materialName,
           buttonText: "收下"
         });
       } else if (code === 1001) {
@@ -292,6 +296,13 @@ export default class MoonCake extends Vue {
   height: 100vh;
   box-sizing: border-box;
   padding-top: 47vh;
+  .title {
+    display: block;
+    height: 16vw;
+    width: 10vw;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
   .gray {
     filter: grayscale(100%);
   }

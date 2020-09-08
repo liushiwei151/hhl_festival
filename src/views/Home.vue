@@ -35,7 +35,7 @@ export default class Home extends Vue {
 <style lang="less" scoped>
 .home {
   background: url(../assets/home_bg.png) no-repeat;
-  background-size: 100% 100%;
+  background-size: cover;
   width: 100vw;
   height: 100vh;
   position: relative;
