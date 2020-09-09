@@ -1,7 +1,9 @@
 <template>
   <div id="home">
-    <div class="homePage"></div>
-    <!-- <button @click="fn">123</button> -->
+    <!-- 首页 -->
+    <transition name="fade">
+      <home-page @startGame="startGame" v-show="isShowPage"></home-page>
+    </transition>
   </div>
 </template>
 
@@ -9,10 +11,16 @@
 import { Component, Vue } from "vue-property-decorator";
 import * as THREE from "three";
 const orienter = require("../common/orienter.js");
+import homePage from "../components/homePage.vue";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
 
-@Component({})
+@Component({
+  components: {
+    homePage
+  }
+})
 export default class Home extends Vue {
   //场景
   scene: THREE.Scene | null = null;
@@ -25,16 +33,66 @@ export default class Home extends Vue {
   controls: OrbitControls | null = null;
   //是否开始陀螺仪
   isStart = false;
+  //计算出的陀螺仪移动距离
   lons = 0;
   lat = 0;
+  //three的时间对象
+  clock: THREE.Clock | null = null;
+  //相机当前朝向坐标
+  lookat!: THREE.Vector3;
+  //是否显示首页
+  isShowPage = true;
+  //开启教学动画
+  isTeachAnimation = true;
   //当前时间
-  // nowDate = Number(new Date());
+  nowDate = Number(new Date());
   mounted(): void {
+    this.imgDpr();
     this.init();
     this.onOrient();
   }
+  //截取图片
   fn() {
-    this.isStart = !this.isStart;
+    if (this.renderer !== null && this.scene !== null && this.camera !== null) {
+      var image = new Image();
+      this.renderer.render(this.scene, this.camera);
+
+      let imgData = this.renderer.domElement.toDataURL("image/jpeg"); //这里可以选择png格式jpeg格式
+      image.src = imgData;
+      // document.body.appendChild(image);
+      console.log(imgData);
+    }
+  }
+  //设定清晰度
+  imgDpr() {
+    const navigatorUserAgent = navigator.userAgent;
+    const iPhone = navigatorUserAgent.indexOf("iPhone");
+    let dpr, one_dpr;
+    if (iPhone > -1) {
+      dpr = Number(window.devicePixelRatio);
+      one_dpr = 1 / dpr;
+    } else {
+      dpr = 1;
+      one_dpr = 1;
+    }
+    const writeText =
+      '<meta name="viewport" content="width=device-width,initial-scale=' +
+      one_dpr +
+      ",maximum-scale=" +
+      one_dpr +
+      ",minimum-scale=" +
+      one_dpr +
+      ',user-scalable=no">\n        <meta name="\'flexible" content="initial-dpr=' +
+      dpr +
+      '">';
+    document.write(writeText);
+    var html = document.getElementsByTagName("html");
+    var F0 = 75;
+    html[0].setAttribute("data-dpr", "" + dpr);
+  }
+  //开始游戏
+  startGame() {
+    this.isShowPage = false;
   }
   //重力感应计算
   onOrient() {
@@ -97,12 +155,15 @@ export default class Home extends Vue {
     const width = window.innerWidth; //窗口宽度
     const height = window.innerHeight; //窗口高度
     this.camera = new THREE.PerspectiveCamera(72, width / height, 0.01, 1100);
-    this.camera.position.set(0, 0.1, 0); //设置相机位置
-    // const lookat = new THREE.Vector3(100, 100, -100);
-    this.camera.lookAt(new THREE.Vector3(100, 100, 100)); //设置相机方向(指向的场景对象)
-    //照相机帮助线
+    this.camera.position.set(-0.2, 0.1, 0); //设置相机位置
+    this.lookat = new THREE.Vector3(6, 2, -2);
+    this.camera.lookAt(this.lookat); //设置相机方向(指向的场景对象)
+    //照相机辅助线
+    const cameraPerspectiveHelper = new THREE.CameraHelper(this.camera);
+    this.scene.add(cameraPerspectiveHelper);
     // 旋转预设 摄影机看到的角度 Start//
     // this.scene.rotation.set(0, 0, 0); //首頁
+
     //坐标系
     const axesHelper = new THREE.AxesHelper(2500);
     this.scene.add(axesHelper);
@@ -124,9 +185,9 @@ export default class Home extends Vue {
     home.appendChild(this.renderer.domElement); //追加到容器中去
     //执行渲染操作   指定场景、相机作为参数
     this.renders();
-    if (!this.isStart) {
-      const controls = new OrbitControls(this.camera, this.renderer.domElement);
-    }
+    // if (!this.isStart) {
+    //   const controls = new OrbitControls(this.camera, this.renderer.domElement);
+    // }
   }
   //大地
   land(e: THREE.Scene) {
@@ -176,9 +237,19 @@ export default class Home extends Vue {
     // let time = Number(new Date());
     // this.nowDate = time;
     requestAnimationFrame(this.renders);
+    if (this.isShowPage) {
+      return;
+    }
+    if (this.clock === null) {
+      // 创建一个时钟对象clock
+      this.clock = new THREE.Clock();
+      this.clock.start();
+    }
+    const t = this.clock.getDelta();
     // 相机随陀螺仪运动
     const phi = THREE.MathUtils.degToRad(90 - this.lat);
     const theta = THREE.MathUtils.degToRad(this.lons - 0);
+    // console.log(this.camera);
     if (this.controls) {
       this.controls.update();
     }
@@ -190,23 +261,41 @@ export default class Home extends Vue {
       );
       this.camera.lookAt(position);
     }
+    if (this.isTeachAnimation) {
+      this.teachAnimation(t);
+    }
     this.renderer.render(this.scene, this.camera);
     this.renderer.shadowMap.enabled = true;
   }
+  teachAnimation(t: number) {
+    if (this.camera === null || this.clock === null) return;
+    const time = this.clock.getElapsedTime();
+    const position = this.lookat;
+    if (time > 2 && time < 6) {
+      position.x += t * 1.5;
+      position.z += t * 2;
+      // position.y += t * 0.5;
+    } else if (time > 6 && time < 11) {
+      position.x -= t * 1.5;
+      position.z -= t * 1.5;
+      // position.y += t * 0.1;
+    } else if (time >= 12) {
+      this.isTeachAnimation = false;
+    }
+    this.camera.lookAt(position);
+  }
 }
 </script>
-<style lang="less">
+<style lang="less" scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 3s;
+}
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
 #home {
   overflow: hidden;
-}
-.homePage {
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
-  top: 0;
-  left: 0;
-  z-index: 90;
-  background: url(../static/homePageBg.png) no-repeat;
-  background-size: cover;
 }
 </style>
