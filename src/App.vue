@@ -229,7 +229,7 @@ export default class App extends Vue {
         "hhl_festival_userInfo",
         JSON.stringify(res.data.data)
       );
-      self.getRank();
+      // self.getRank();
     });
   }
   // 点击右上按钮的不同结果

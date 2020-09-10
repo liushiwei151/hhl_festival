@@ -6,7 +6,8 @@ import Vue from "vue";
 //链接
 const axios = Axios.create({
   // baseURL: "test", //本地
-  baseURL: "http://qrhhl.yunyutian.cn", //测试
+  // baseURL: "http://qrhhl.yunyutian.cn", //测试
+  baseURL: "https://qr.hhl1916.com/", //正式
   timeout: 1000 * 12,
   headers: { "Content-Type": "application/json" }
 });
