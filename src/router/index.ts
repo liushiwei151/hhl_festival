@@ -1,7 +1,7 @@
 import Vue from "vue";
 import VueRouter, { RouteConfig } from "vue-router";
 import Home from "../views/Home.vue";
-import loading from "../views/loading.vue";
+import demo from "../views/demo.vue";
 
 Vue.use(VueRouter);
 
@@ -11,6 +11,11 @@ const routes: Array<RouteConfig> = [
     path: "/",
     name: "Home",
     component: Home
+  },
+  {
+    path: "/demo",
+    name: "demo",
+    component: demo
   }
 ];
 

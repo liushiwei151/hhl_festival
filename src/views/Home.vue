@@ -15,6 +15,7 @@ import homePage from "../components/homePage.vue";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
+import { ImprovedNoise } from "three/examples/jsm/math/ImprovedNoise.js";
 
 @Component({
   components: {
@@ -41,12 +42,13 @@ export default class Home extends Vue {
   //相机当前朝向坐标
   lookat!: THREE.Vector3;
   //是否显示首页
-  isShowPage = true;
+  isShowPage = false;
   //开启教学动画
-  isTeachAnimation = true;
+  isTeachAnimation = false;
   //当前时间
   nowDate = Number(new Date());
   mounted(): void {
+    const self = this;
     this.imgDpr();
     this.init();
     this.onOrient();
@@ -148,31 +150,36 @@ export default class Home extends Vue {
     // 创建场景对象scene
     this.scene = new THREE.Scene();
     this.scene.updateMatrixWorld(true);
+    this.scene.background = new THREE.Color(0xbfd1e5);
     //模型
-    this.sphereGeometry(this.scene);
+    // this.sphereGeometry(this.scene);
     this.land(this.scene);
+    // this.moon(this.scene);
+    this.tu(this.scene);
+    //创建一个点相机以点的方向摇摆
+    this.point(this.scene);
     /**透视投影相机*/
     const width = window.innerWidth; //窗口宽度
     const height = window.innerHeight; //窗口高度
-    this.camera = new THREE.PerspectiveCamera(72, width / height, 0.01, 1100);
-    this.camera.position.set(-0.2, 0.1, 0); //设置相机位置
+    this.camera = new THREE.PerspectiveCamera(72, width / height, 1, 20000);
+    // this.camera.position.set(-0.2, 0.1, 0); //设置相机位置
+    this.camera.position.set(1, 1, 1); //设置相机位置
+    // this.camera.position.set(1000, 1000, 1000);
     this.lookat = new THREE.Vector3(6, 2, -2);
     this.camera.lookAt(this.lookat); //设置相机方向(指向的场景对象)
     //照相机辅助线
-    const cameraPerspectiveHelper = new THREE.CameraHelper(this.camera);
-    this.scene.add(cameraPerspectiveHelper);
+    // const cameraPerspectiveHelper = new THREE.CameraHelper(this.camera);
+    // this.scene.add(cameraPerspectiveHelper);
     // 旋转预设 摄影机看到的角度 Start//
     // this.scene.rotation.set(0, 0, 0); //首頁
-
     //坐标系
     const axesHelper = new THREE.AxesHelper(2500);
     this.scene.add(axesHelper);
     let point = new THREE.PointLight(0xffffff);
-    point.position.set(0.9, 0.9, 0.9); //点光源位置
-    // 通过add方法插入场景中，不插入的话，渲染的时候不会获取光源的信息进行光照计算
+    point.position.set(0, 100, 0); //点光源位置
     this.scene.add(point); //点光源添加到场景中
     //环境光    环境光颜色与网格模型的颜色进行RGB进行乘法运算
-    const ambient = new THREE.AmbientLight(0x444444);
+    const ambient = new THREE.AmbientLight(0xffffff);
     this.scene.add(ambient);
     //初始化渲染器，追加到容器
     this.renderer = new THREE.WebGLRenderer({
@@ -185,27 +192,275 @@ export default class Home extends Vue {
     home.appendChild(this.renderer.domElement); //追加到容器中去
     //执行渲染操作   指定场景、相机作为参数
     this.renders();
-    // if (!this.isStart) {
-    //   const controls = new OrbitControls(this.camera, this.renderer.domElement);
-    // }
+    if (!this.isStart) {
+      const controls = new OrbitControls(this.camera, this.renderer.domElement);
+    }
+  }
+  //相机中心点
+  point(e: THREE.Scene) {
+    const geometry = new THREE.BufferGeometry(); //创建一个Buffer类型几何体对象
+    // 点渲染模式
+    const material = new THREE.PointsMaterial({
+      color: 0xff0000,
+      size: 10.0 //点对象像素尺寸
+    }); //材质对象
+    const points = new THREE.Points(geometry, material); //点模型对象
+    e.add(points); //点对象添加到场景中
+  }
+  //对象拾取
+  pickupObjects() {
+    if (this.camera === null || this.scene === null) return;
+    let raycaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector3(1, 1, 1);
+    //将鼠标点击位置的屏幕坐标转成threejs中的标准坐标
+    raycaster.setFromCamera(mouse, this.camera); //计算射线相机到的对象，可能有多个对象，因此返回的是一个数组，按离相机远近排列
+    let intersects = raycaster.intersectObjects(this.scene.children);
+    for (var i = 0; i < intersects.length; i++) {
+      intersects[i].object.scale.set(20, 20, 20);
+    }
+  }
+  //月亮
+  moon(e: THREE.Scene) {
+    const textureLoader = new THREE.TextureLoader();
+    // 加载月亮纹理贴图
+    const texture = textureLoader.load(require("../static/moon_2k.jpg"));
+    const textureNormal = textureLoader.load(
+      require("../static/moon_2k_normal.jpg")
+    );
+    var geometry = new THREE.SphereGeometry(0.05, 40, 40);
+    var material = new THREE.MeshPhongMaterial({
+      map: texture,
+      normalMap: textureNormal, //法线贴图
+      //设置深浅程度，默认值(1,1)。
+      normalScale: new THREE.Vector2(2, 2)
+      // side: THREE.DoubleSide
+    });
+    // 加载法线贴图
+
+    var circle = new THREE.Mesh(geometry, material);
+    console.log(circle);
+    e.add(circle);
+    circle.position.set(0.5, 0.5, 0.5);
+    // circle.rotateY(Math.PI / 1.5);
+    // circle.rotateY(-Math.PI / 3);
+  }
+  // 草地
+  grass(e: THREE.Scene) {
+    const geometryTerrain = new THREE.PlaneBufferGeometry(6000, 6000, 256, 256);
+    // BufferGeometryUtils.computeTangents(geometryTerrain);
+    console.log(TerrainShader);
+    const terrainShader = TerrainShader.TerrainShader;
+    const uniformsTerrain = THREE.UniformsUtils.clone(terrainShader.uniforms);
+    const rx = 256,
+      ry = 256;
+    const pars = {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBFormat
+    };
+    const normalMap = new THREE.WebGLRenderTarget(rx, ry, pars);
+    normalMap.texture.generateMipmaps = false;
+    const heightMap = new THREE.WebGLRenderTarget(rx, ry, pars);
+    heightMap.texture.generateMipmaps = false;
+    const textureLoader = new THREE.TextureLoader();
+    var specularMap = new THREE.WebGLRenderTarget(2048, 2048, pars);
+    specularMap.texture.generateMipmaps = false;
+    var diffuseTexture1 = textureLoader.load(
+      require("../static/terrain/grasslight-big.jpg")
+    );
+    var diffuseTexture2 = textureLoader.load(
+      require("../static/terrain/backgrounddetailed6.jpg")
+    );
+    var detailTexture = textureLoader.load(
+      require("../static/terrain/grasslight-big-nm.jpg")
+    );
+    uniformsTerrain["tNormal"].value = normalMap.texture;
+    uniformsTerrain["uNormalScale"].value = 3.5;
+
+    uniformsTerrain["tDisplacement"].value = heightMap.texture;
+
+    uniformsTerrain["tDiffuse1"].value = diffuseTexture1;
+    uniformsTerrain["tDiffuse2"].value = diffuseTexture2;
+    uniformsTerrain["tSpecular"].value = specularMap.texture;
+    uniformsTerrain["tDetail"].value = detailTexture;
+
+    uniformsTerrain["enableDiffuse1"].value = true;
+    uniformsTerrain["enableDiffuse2"].value = true;
+    uniformsTerrain["enableSpecular"].value = true;
+
+    uniformsTerrain["diffuse"].value.setHex(0xffffff);
+    uniformsTerrain["specular"].value.setHex(0xffffff);
+
+    uniformsTerrain["shininess"].value = 30;
+
+    uniformsTerrain["uDisplacementScale"].value = 375;
+
+    uniformsTerrain["uRepeatOverlay"].value.set(6, 6);
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniformsTerrain,
+      vertexShader: terrainShader.vertexShader,
+      fragmentShader: terrainShader.fragmentShader,
+      lights: true,
+      fog: true
+    });
+    console.log(material);
+    const terrain = new THREE.Mesh(geometryTerrain, material);
+    e.position.set(0, -125, 0);
+    e.rotation.x = -Math.PI / 2;
+    e.add(terrain);
+    console.log(terrain);
+  }
+  //土地
+  tu(e: THREE.Scene) {
+    const self = this;
+    const worldWidth = 256,
+      worldDepth = 256;
+    var geometry = new THREE.PlaneBufferGeometry(
+      7500,
+      7500,
+      worldWidth - 1,
+      worldDepth - 1
+    );
+
+    geometry.rotateX(-Math.PI / 2);
+    var vertices = geometry.attributes.position.array;
+    var data = this.generateHeight(worldWidth, worldDepth);
+
+    for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
+      vertices[j + 1] = data[i] * 10;
+    }
+    const texture = new THREE.CanvasTexture(
+      self.generateTexture(data, worldWidth, worldDepth) as HTMLCanvasElement
+    );
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+
+    const mesh = new THREE.Mesh(
+      geometry,
+      new THREE.MeshBasicMaterial({ map: texture })
+    );
+    e.add(mesh);
+  }
+  generateTexture(data?: any, width?: any, height?: any) {
+    var canvas, canvasScaled, context, image, imageData, vector3, sun, shade;
+
+    vector3 = new THREE.Vector3(0, 0, 0);
+
+    sun = new THREE.Vector3(1, 1, 1);
+    sun.normalize();
+
+    var canvas: any = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const contexts = canvas.getContext("2d");
+    if (contexts === null) return;
+
+    contexts.fillStyle = "#000";
+    contexts.fillRect(0, 0, width, height);
+
+    image = contexts.getImageData(0, 0, canvas.width, canvas.height);
+    imageData = image.data;
+
+    for (var i = 0, j = 0, l = imageData.length; i < l; i += 4, j++) {
+      vector3.x = data[j - 2] - data[j + 2];
+      vector3.y = 2;
+      vector3.z = data[j - width * 2] - data[j + width * 2];
+      vector3.normalize();
+
+      shade = vector3.dot(sun);
+
+      imageData[i] = (96 + shade * 128) * (0.5 + data[j] * 0.007);
+      imageData[i + 1] = (32 + shade * 96) * (0.5 + data[j] * 0.007);
+      imageData[i + 2] = shade * 96 * (0.5 + data[j] * 0.007);
+    }
+
+    contexts.putImageData(image, 0, 0);
+
+    // Scaled 4x
+
+    canvasScaled = document.createElement("canvas");
+    canvasScaled.width = width * 4;
+    canvasScaled.height = height * 4;
+
+    context = canvasScaled.getContext("2d");
+    if (context === null) return;
+    context.scale(4, 4);
+    context.drawImage(canvas, 0, 0);
+
+    image = context.getImageData(0, 0, canvasScaled.width, canvasScaled.height);
+    imageData = image.data;
+
+    for (var i = 0, l = imageData.length; i < l; i += 4) {
+      var v = ~~(Math.random() * 5);
+
+      imageData[i] += v;
+      imageData[i + 1] += v;
+      imageData[i + 2] += v;
+    }
+
+    context.putImageData(image, 0, 0);
+    console.log(canvasScaled);
+    return canvasScaled;
+  }
+  generateHeight(width: number, height: number) {
+    var size = width * height,
+      data = new Uint8Array(size),
+      perlin = new ImprovedNoise(),
+      quality = 1,
+      z = Math.random() * 100;
+
+    for (var j = 0; j < 4; j++) {
+      for (var i = 0; i < size; i++) {
+        var x = i % width,
+          y = ~~(i / width);
+        data[i] += Math.abs(
+          perlin.noise(x / quality, y / quality, z) * quality * 1.75
+        );
+      }
+
+      quality *= 5;
+    }
+
+    return data;
   }
   //大地
   land(e: THREE.Scene) {
     /**
      * 创建一个地面
      */
-    const geometry = new THREE.PlaneGeometry(2, 2); //矩形平面
-    // 加载树纹理贴图
-    var texture = new THREE.TextureLoader().load(require("../static/dusk.jpg"));
+    const worldWidth = 25,
+      worldDepth = 25;
+    const geometry = new THREE.PlaneBufferGeometry(2, 2); //矩形平面
+    var vertices = geometry.attributes.position.array;
+    var data = this.generateHeight(worldWidth, worldDepth);
+
+    for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
+      vertices[j + 1] = data[i] * 10;
+    }
+    // 加载纹理贴图
+    const textureLoader = new THREE.TextureLoader();
+    var texture = textureLoader.load(require("../static/dusk.jpg"));
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    const textureNormal = textureLoader.load(
+      require("../static/dusk_normal.jpg")
+    );
+    // 加载高光贴图
+    const textureSpecular = textureLoader.load(
+      require("../static/dusk_light.jpg")
+    );
     // 设置阵列
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
     // uv两个方向纹理重复数量
-    // texture.repeat.set(10, 10);
-    var material = new THREE.MeshLambertMaterial({
+    const material = new THREE.MeshPhongMaterial({
+      shininess: 30, //高光部分的亮度，默认30
+      specularMap: textureSpecular, //高光贴图
       map: texture
+      // normalMap: textureNormal, //法线贴图
+      //设置深浅程度，默认值(1,1)。
+      // normalScale: new THREE.Vector2(1, 100)
     });
-    var mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+    const mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
     e.add(mesh); //网格模型添加到场景中
     mesh.rotateX(-Math.PI / 2);
   }
@@ -229,7 +484,7 @@ export default class Home extends Vue {
     const sphere = new THREE.Mesh(geometry, material);
     e.add(sphere);
   }
-  //动画旋转渲染e场景f相机
+  //渲染页面
   renders() {
     if (this.renderer === null || this.scene === null || this.camera === null) {
       return;
@@ -264,6 +519,7 @@ export default class Home extends Vue {
     if (this.isTeachAnimation) {
       this.teachAnimation(t);
     }
+    // this.pickupObjects();
     this.renderer.render(this.scene, this.camera);
     this.renderer.shadowMap.enabled = true;
   }
