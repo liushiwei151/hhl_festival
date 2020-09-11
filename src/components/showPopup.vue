@@ -1,5 +1,5 @@
 <template>
-  <div class="showPopup" @click.self="closePopup('box')">
+  <div class="showPopup">
     <!-- 规则弹窗 -->
     <div class="actRule" v-show="isShowContent.contentName === 'rule'">
       <div class="ruleContent">
@@ -132,7 +132,7 @@
           您制作完成<span>{{ isShowContent.content.name }}</span
           >一个!
         </p>
-        <p>谢谢您的参与!</p>
+        <p>很遗憾未中奖，谢谢您的参与！</p>
         <button @click.stop="closePopup('popupBox')">
           {{ isShowContent.content.buttonText }}
         </button>
@@ -214,6 +214,7 @@ export default class ShowPopup extends Vue {
         margin-bottom: 2vw;
       }
       button {
+        font-size: 4.5vw;
         border: none;
         outline: none;
         background: url(../assets/popup/buttonBox.png) no-repeat;
