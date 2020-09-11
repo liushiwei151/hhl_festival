@@ -114,9 +114,9 @@ export default class App extends Vue {
     const share = {
       title: "月满团圆，感恩有你",
       desc: "跟着楼楼做月饼，惊喜大奖等你赢！",
-      // link: "https://wx.hhl1916.com/huanghelou1916-center/wx/gCode?name=toCake",
-      link:
-        "http://qrhhl.yunyutian.cn/huanghelou1916-center/wx/gCode?name=toCake",
+      link: "https://wx.hhl1916.com/huanghelou1916-center/wx/gCode?name=toCake",
+      // link:
+      // "http://qrhhl.yunyutian.cn/huanghelou1916-center/wx/gCode?name=toCake",
       imgUrl: "https://pic.cwyyt.cn/upload/20200902/143606366_moon.jpg"
     };
     // eslint-disable-next-line
