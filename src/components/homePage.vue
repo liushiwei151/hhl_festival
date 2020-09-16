@@ -57,7 +57,9 @@ export default class homePage extends Vue {
     require("../static/homePage/4.png"),
     require("../static/homePage/5.png"),
     require("../static/homePage/6.png"),
-    require("../static/homePage/7.png")
+    require("../static/homePage/7.png"),
+    require("../static/teachImg/phone.png"),
+    require("../static/teachImg/hand.png")
   ];
   //当前图片加载数量
   count = 0;
@@ -140,7 +142,9 @@ export default class homePage extends Vue {
     z-index: 90;
     background: url(../static/homePage/homePageBg.png) no-repeat;
     background-size: cover;
-
+    .isClick {
+      filter: opacity(0.5);
+    }
     .pageButton {
       background: url(../static/homePage/homePageButton.png) no-repeat;
       background-size: 100% 100%;
