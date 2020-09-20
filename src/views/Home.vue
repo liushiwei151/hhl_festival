@@ -336,7 +336,7 @@ export default class Home extends Vue {
     var data = this.generateHeight(worldWidth, worldDepth);
 
     for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
-      vertices[j + 1] = data[i] * 0.001;
+      vertices[j + 1] = data[i] * 0.00000001;
     }
     const texture = new THREE.CanvasTexture(
       self.generateTexture(data, worldWidth, worldDepth) as HTMLCanvasElement
@@ -480,7 +480,7 @@ export default class Home extends Vue {
     geometry.scale(1, 1, -1);
     //设置球体的背景贴图
     const textureBg = new THREE.TextureLoader().load(
-      require("../static/bg3.jpg")
+      require("../static/pageBox.jpg")
     );
     textureBg.generateMipmaps = true;
     textureBg.magFilter = THREE.LinearFilter; //设置贴纸素材的质量
@@ -544,7 +544,6 @@ export default class Home extends Vue {
     }
     //陀螺仪开关
     if (this.isStart) {
-      console.log(this.camera.rotation);
       this.deviceControl.update();
     }
     //教程动画开关
@@ -556,7 +555,7 @@ export default class Home extends Vue {
     this.renderer.render(this.scene, this.camera);
     this.renderer.shadowMap.enabled = true;
     // this.camera.lookAt(this.lookat);
-    // this.camera.updateProjectionMatrix();
+    this.camera.updateProjectionMatrix();
   }
   //教学动画精灵图
   teachImg() {

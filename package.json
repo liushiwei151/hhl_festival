@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "jstween": "^1.0.2",
+    "svg-sprite-loader": "^5.0.0",
     "three": "^0.120.1",
     "vue": "^2.6.11",
     "vue-class-component": "^7.2.3",
