@@ -20,13 +20,76 @@
     <!-- 显示地址的动画 -->
     <transition name="fade">
       <div class="bg2" v-show="isShowBg">
-        <div class="position">
-          <div></div>
-          <p>您现在的位置: {{ userInfo.adress }}</p>
-          <p>东经: {{ userInfo.lon }}</p>
-          <p>北纬: {{ userInfo.lat }}</p>
-          <icon name="huxian"></icon>
+        <transition name="fade">
+          <div class="position" v-show="isShowBg1">
+            <div class="positionPoint"></div>
+            <p>您现在的位置: {{ userInfo.adress }}</p>
+            <p>东经: {{ userInfo.lon }}</p>
+            <p>北纬: {{ userInfo.lat }}</p>
+            <div class="arc" :class="{ arcAnimation: arcAnimation }"></div>
+          </div>
+        </transition>
+        <transition name="fade">
+          <div class="arcWeb" v-show="isShowBg2">
+            <div
+              class="arc"
+              style="top:0"
+              :class="{ arcAnimation2: arcAnimation2 }"
+            ></div>
+            <div class="arcText">
+              <p>为您空降</p>
+              <p>湖北·武汉·黄鹤楼</p>
+              <p>最佳赏月地点</p>
+            </div>
+          </div>
+        </transition>
+
+        <transition name="fade">
+          <div class="mapBox" v-show="isShowBg3">
+            <div class="mapImg" :class="{ light: isLight }"></div>
+            <div class="mapText"></div>
+          </div>
+        </transition>
+      </div>
+    </transition>
+    <!-- 拍照选词页面 -->
+    <transition name="fade">
+      <div
+        ref="shotImage"
+        class="photographWeb"
+        v-show="photographWeb"
+        @click.stop="screenShot()"
+        :class="{ blur: isBlur }"
+      >
+        <div class="tipText" v-show="!isBlur">
+          <p>点击屏幕任意一处</p>
+          <p>拍下您的满月时刻</p>
         </div>
+        <div class="randomMoon" :style="{ left: moonPosition }"></div>
+      </div>
+    </transition>
+    <!-- 选择句子 -->
+    <transition name="fade">
+      <div class="choseBox" v-show="isChoseBox">
+        <div>
+          <p>上下滑动</p>
+          <p>选择诗词</p>
+        </div>
+        <div class="contentBox">
+          <div class="left"></div>
+          <ul class="center">
+            <li v-for="(item, index) in poetryText" :key="index">
+              <p>{{ item.p1 }}</p>
+              <p>{{ item.p2 }}</p>
+            </li>
+          </ul>
+          <div class="right">
+            <span>1</span>
+            <span class="xian"></span>
+            <span>{{ poetryText.length }}</span>
+          </div>
+        </div>
+        <div class="choseConfirm" @click="choseConfirm"></div>
       </div>
     </transition>
   </div>
@@ -35,7 +98,7 @@
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 import homePage from "../components/homePage.vue";
-
+import html2canvas from "html2canvas";
 const C3D = require("../common/css3d.js");
 const Orienter = require("../common/orienter.js");
 const JT = require("../common/jstween.js");
@@ -87,15 +150,44 @@ export default class page extends Vue {
   isShowBox = true;
   // 是否显示地址背景图
   isShowBg = false;
+  //是否显示弧线动画
+  arcAnimation = false;
+  //第二个弧线动画
+  arcAnimation2 = false;
+  //是否显示经纬度页面1
+  isShowBg1 = true;
+  //是否显示弧线提示页面2
+  isShowBg2 = false;
+  //是否显示地图页面3
+  isShowBg3 = false;
+  //是否显示地图光晕
+  isLight = false;
+  //是否显示拍照页面
+  photographWeb = false;
+  // 是否显示背景模糊
+  isBlur = false;
+  //是否显示选择诗词页面
+  isChoseBox = false;
+  //诗词文本
+  poetryText = [
+    { p1: "但愿人长久", p2: "千里共婵娟" },
+    { p1: "春眠不觉晓", p2: "千里共婵娟" },
+    { p1: "夜来风雨声", p2: "千里共婵娟" }
+  ];
   //测试开关
   ceshi = true;
+
+  get moonPosition(): string {
+    const num = Math.random() * 60 + 10;
+    return num + "vw";
+  }
   mounted() {
     const self = this;
     this.init();
     if (this.ceshi) {
       this.isShowPage = false;
-      this.isShowBox = false;
-      this.isShowBg = true;
+      // this.photographWeb = true;
+      this.isChoseBox = true;
       // this.actiondh();
     }
     // this.actiondh();
@@ -103,6 +195,36 @@ export default class page extends Vue {
     // self.resize();
     // };
     // self.resize();
+  }
+  //选择诗词的确定
+  choseConfirm() {}
+  //截图
+  screenShot() {
+    const self = this;
+    console.log("截图");
+    html2canvas(self.$refs.shotImage, {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }).then(canvas => {
+      var image = new Image();
+      const img = canvas.toDataURL("image/jpeg");
+      image.src = img;
+      self.isBlur = true;
+      self.isChoseBox = true;
+      // document.body.appendChild(image);
+      // console.log(image);
+    });
+  }
+  //动态显示地图阴影
+  showlight() {
+    const self = this;
+    if (this.isShowBg3) {
+      // this.isLight = !this.isLight;
+      setTimeout(() => {
+        self.isLight = !self.isLight;
+        self.showlight();
+      }, 1000);
+    }
   }
   //初始化
   init() {
@@ -218,9 +340,7 @@ export default class page extends Vue {
       .updateT(),
       // 为此元素绑定触摸事件，此处可以用于点击时，执行一些操作。
       i.on("touchend", function(e) {
-        // TODO
-        self.isShowBox = false;
-        self.isShowBg = true;
+        self.showAnimation();
       }),
       (i.r0 = Q),
       (i.w0 = value.actor.w),
@@ -809,8 +929,38 @@ export default class page extends Vue {
     });
     this.stage.addChild(curve);
   }
-
-  // 动画显示
+  //地址页面动画显示
+  showAnimation() {
+    const self = this;
+    // 关闭全景环境
+    self.isShowBox = false;
+    // 显示二阶段页面
+    self.isShowBg = true;
+    //开始弧线动画
+    setTimeout(() => {
+      self.arcAnimation = true;
+      // 开始二阶段第二页面，并关闭第一页面经纬度
+      setTimeout(() => {
+        self.isShowBg1 = false;
+        self.isShowBg2 = true;
+        self.arcAnimation2 = true;
+        setTimeout(() => {
+          //关闭第二页面，开启第三地图页面并开始地图光影效果
+          self.isShowBg2 = false;
+          self.isShowBg3 = true;
+          self.isLight = true;
+          //第二阶段关闭进入拍照页面
+          setTimeout(() => {
+            self.isShowBg = false;
+            self.isShowBg3 = false;
+            self.isLight = false;
+            self.photographWeb = true;
+          }, 2000);
+        }, 4000);
+      }, 4000);
+    }, 1000);
+  }
+  // 教学动画显示
   go() {
     const self = this;
     self.getTime("start");
@@ -942,6 +1092,37 @@ export default class page extends Vue {
 }
 </script>
 <style lang="less" scoped>
+@bg: {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+};
+@keyframes arcline {
+  0% {
+    height: 0;
+  }
+  100% {
+    height: 80vh;
+  }
+}
+@keyframes arcline2 {
+  0% {
+    height: 0;
+  }
+  100% {
+    height: 143vw;
+  }
+}
+@keyframes play {
+  from {
+    background-position: 0 100vw;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 3s;
@@ -949,6 +1130,121 @@ export default class page extends Vue {
 .fade-enter,
 .fade-leave-to {
   opacity: 0;
+}
+
+.arcAnimation {
+  animation: arcline 4s linear;
+  animation-fill-mode: forwards;
+}
+.arcAnimation2 {
+  animation: arcline2 4s linear;
+  animation-fill-mode: forwards;
+}
+.arc {
+  background: url(../static/pageBox/hu.png) no-repeat;
+  background-size: cover;
+  width: 36vw;
+  position: absolute;
+  top: 20vh;
+  height: 0;
+  left: 25vw;
+}
+.choseBox {
+  @bg();
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5vh 0;
+  box-sizing: border-box;
+  .contentBox {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5vw;
+    box-sizing: border-box;
+    width: 100%;
+    .left {
+      background: url(../static/pageBox/left.png) no-repeat;
+      background-size: 100% 100%;
+      width: 3vw;
+      height: 30vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+    .right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      height: 15vw;
+      justify-content: space-around;
+      .xian {
+        border-top: solid 1px #fff;
+        display: block;
+        height: 1px;
+        width: 10vw;
+      }
+    }
+    .center {
+      ul {
+        padding: 0;
+      }
+      li {
+        height: 30vw;
+        p {
+          font-size: 7vw;
+          margin: 0;
+        }
+      }
+    }
+  }
+  .choseConfirm {
+    background: url(../static/pageBox/choseButton.png) no-repeat;
+    background-size: 100% 100%;
+    width: 36vw;
+    height: 8vw;
+  }
+  p {
+    margin: 0;
+    margin-bottom: 1vh;
+    letter-spacing: 1vw;
+    font-size: 4vw;
+  }
+  li {
+    list-style: none;
+    margin: 0;
+  }
+}
+.blur {
+  filter: blur(2px);
+}
+.photographWeb {
+  @bg();
+  background: url(../static/pageBox/bg3.png) no-repeat;
+  background-size: cover;
+  transition: all 1s;
+
+  .tipText {
+    color: #fff;
+    font-size: 4.5vw;
+    position: absolute;
+    width: 50vw;
+    left: 25vw;
+    top: 25vh;
+    p {
+      margin: 1vh 0;
+    }
+  }
+  .randomMoon {
+    width: 20vw;
+    height: 20vw;
+    background: url(../static/pageBox/moon.png) no-repeat;
+    background-size: 100% 100%;
+    position: absolute;
+    top: 10vh;
+  }
 }
 .bg2 {
   position: fixed;
@@ -962,14 +1258,49 @@ export default class page extends Vue {
   display: flex;
   flex-direction: column;
   align-items: center;
-
+  .mapBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: auto;
+    .mapImg {
+      width: 90vw;
+      height: 100vw;
+      background: url(../static/pageBox/map.png) no-repeat;
+      background-size: 100% 100%;
+      transition: all 2s;
+    }
+    .light {
+      filter: drop-shadow(0 0 2px #000) drop-shadow(0 0 15px rgb(238, 230, 238))
+        drop-shadow(0 0 5px rgb(238, 238, 238));
+    }
+    .mapText {
+      width: 90vw;
+      height: 20vw;
+      background: url(../static/pageBox/mapText.png) no-repeat;
+      background-size: 100% 100%;
+    }
+  }
+  .arcWeb {
+    .arcText {
+      position: absolute;
+      width: 50vw;
+      left: 25vw;
+      bottom: 10vw;
+      font-size: 4.5vw;
+    }
+    p {
+      margin: 1vw 0;
+    }
+  }
   .position {
     margin-top: 10vh;
-    div {
+    transition: opacity 3s;
+    .positionPoint {
       background: url(../static/pageBox/position.png) no-repeat;
       background-size: 100% 100%;
-      width: 20vw;
-      height: 20vw;
+      width: 10vh;
+      height: 10vh;
       margin: 0 auto;
     }
   }
