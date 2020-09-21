@@ -23,9 +23,9 @@
         <transition name="fade">
           <div class="position" v-show="isShowBg1">
             <div class="positionPoint"></div>
-            <p>您现在的位置: {{ userInfo.adress }}</p>
-            <p>东经: {{ userInfo.lon }}</p>
-            <p>北纬: {{ userInfo.lat }}</p>
+            <p>您现在的位置: {{ userInfo.city }}</p>
+            <p>东经: {{ userInfo.longitude }}</p>
+            <p>北纬: {{ userInfo.latitude }}</p>
             <div class="arc" :class="{ arcAnimation: arcAnimation }"></div>
           </div>
         </transition>
@@ -61,30 +61,39 @@
         @click.stop="screenShot()"
         :class="{ blur: isBlur }"
       >
-        <div class="tipText" v-show="!isBlur">
-          <p>点击屏幕任意一处</p>
-          <p>拍下您的满月时刻</p>
-        </div>
         <div class="randomMoon" :style="{ left: moonPosition }"></div>
       </div>
     </transition>
+    <!-- 提示语句为避免被截图移除shotImage -->
+    <transition name="fade">
+      <div class="tipText" v-show="photographWeb && !isBlur">
+        <p>点击屏幕任意一处</p>
+        <p>拍下您的满月时刻</p>
+      </div>
+    </transition>
+
     <!-- 选择句子 -->
     <transition name="fade">
-      <div class="choseBox" v-show="isChoseBox">
+      <div
+        class="choseBox"
+        v-show="isChoseBox"
+        @touchstart="touchStart"
+        @touchend="touchEnd"
+      >
         <div>
           <p>上下滑动</p>
           <p>选择诗词</p>
         </div>
         <div class="contentBox">
           <div class="left"></div>
-          <ul class="center">
-            <li v-for="(item, index) in poetryText" :key="index">
+          <transition-group tag="ul" class="center" name="slide" mode="out-in">
+            <li v-for="item in poetryText" :key="item.id">
               <p>{{ item.p1 }}</p>
               <p>{{ item.p2 }}</p>
             </li>
-          </ul>
+          </transition-group>
           <div class="right">
-            <span>1</span>
+            <span>{{ poetryText[0].id }}</span>
             <span class="xian"></span>
             <span>{{ poetryText.length }}</span>
           </div>
@@ -92,36 +101,66 @@
         <div class="choseConfirm" @click="choseConfirm"></div>
       </div>
     </transition>
+    <!-- 返回的图片 -->
+    <transition name="fade">
+      <div class="imgBox" ref="imgBox" v-show="isShowImgBox">
+        <div class="imgBoxClose" @click="imgBoxClose"></div>
+      </div>
+    </transition>
+    <!-- 最后的页面 -->
+    <transition name="fade">
+      <div v-show="lastWeb" class="lastWeb">
+        <div class="lastMoon"></div>
+        <transition-group name="fade" style="padding-left:14vw">
+          <p class="p1" key="p1" v-show="lastAnimation.p1"></p>
+          <p class="p2" key="p2" v-show="lastAnimation.p2"></p>
+          <p class="p3" key="p3" v-show="lastAnimation.p3"></p>
+          <p class="p4" key="p4" v-show="lastAnimation.p4"></p>
+          <button
+            key="button"
+            v-show="lastAnimation.button"
+            @click="restart"
+          ></button>
+        </transition-group>
+
+        <div
+          class="arrow"
+          :class="{ arrowAnimation: lastAnimation.arrow }"
+        ></div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
+import { Component, Vue, Watch, Inject } from "vue-property-decorator";
 import homePage from "../components/homePage.vue";
 import html2canvas from "html2canvas";
 const C3D = require("../common/css3d.js");
 const Orienter = require("../common/orienter.js");
 const JT = require("../common/jstween.js");
+const api = require("../api/index.js");
 
+interface User {
+  [key: string]: string | number;
+}
 @Component({
   components: {
     homePage
   }
 })
-export default class page extends Vue {
+export default class Page extends Vue {
+  @Inject()
+  private restart!: Function;
   //是否显示首页
   isShowPage = true;
   requestAnimationFrame =
-    window.requestAnimationFrame ||
-    window.mozRequestAnimationFrame ||
-    window.webkitRequestAnimationFrame ||
-    window.msRequestAnimationFrame ||
-    window.oRequestAnimationFrame;
+    window.requestAnimationFrame || window.webkitRequestAnimationFrame;
   //客户信息
-  userInfo = {
-    adress: "北京市",
-    lon: "116.397128",
-    lat: "39.916527"
+  userInfo: User | null = {
+    city: "",
+    latitude: 0,
+    longitude: 0
   };
   //c3d属性无声明，全用any替代
   //c3d舞台
@@ -168,26 +207,65 @@ export default class page extends Vue {
   isBlur = false;
   //是否显示选择诗词页面
   isChoseBox = false;
+  //是否显示返回的截图
+  isShowImgBox = false;
+  //截图的图片base64值
+  imgText: string | null = null;
   //诗词文本
   poetryText = [
-    { p1: "但愿人长久", p2: "千里共婵娟" },
-    { p1: "春眠不觉晓", p2: "千里共婵娟" },
-    { p1: "夜来风雨声", p2: "千里共婵娟" }
+    { p1: "海山生明月", p2: "天涯共此时", id: 1 },
+    { p1: "花好月圆人长久", p2: "", id: 2 },
+    { p1: "但愿人长久", p2: "千里共婵娟", id: 3 },
+    { p1: "皓月挂高楼", p2: "相思传万里", id: 4 },
+    { p1: "愿把团圆盏", p2: "黄鹤寄真情", id: 5 },
+    { p1: "秋正平分月正圆", p2: "楼上佳人倚栏前", id: 6 },
+    { p1: "黄鹤绕月飞", p2: "吉祥天地间", id: 7 },
+    { p1: "佳节必有黄鹤楼", p2: "", id: 8 },
+    { p1: "月上层楼话团圆", p2: "鹤舞九天庆中秋", id: 9 }
   ];
+  //诗词页面触摸手机屏幕开始y坐标
+  t1 = 0;
+  //诗词页面触摸结束结束y坐标
+  t2 = 0;
+  //是否显示最后的结束页面
+  lastWeb = false;
+  //结束页面的动画数据
+  lastAnimation = {
+    p1: false,
+    p2: false,
+    p3: false,
+    p4: false,
+    arrow: false,
+    button: false
+  };
   //测试开关
-  ceshi = true;
+  ceshi = false;
 
   get moonPosition(): string {
     const num = Math.random() * 60 + 10;
     return num + "vw";
   }
+  @Watch("t1")
+  watchT1() {
+    setTimeout(() => {
+      const t = this.t1 - this.t2;
+      //上滑动
+      if (t > 0 && t > 20) {
+        this.topTouch();
+      } else if (t < 0 && t < -20) {
+        this.bottomTouch();
+      }
+    }, 300);
+  }
   mounted() {
     const self = this;
+    this.getJsSign();
     this.init();
     if (this.ceshi) {
       this.isShowPage = false;
-      // this.photographWeb = true;
-      this.isChoseBox = true;
+      this.lastWeb = true;
+      this.lastAni();
+      // this.isChoseBox = true;
       // this.actiondh();
     }
     // this.actiondh();
@@ -196,25 +274,221 @@ export default class page extends Vue {
     // };
     // self.resize();
   }
+  //结束页面动画效果
+  lastAni() {
+    Vue.set(this.lastAnimation, "p1", true);
+    setTimeout(() => {
+      Vue.set(this.lastAnimation, "p2", true);
+      setTimeout(() => {
+        Vue.set(this.lastAnimation, "p3", true);
+        setTimeout(() => {
+          Vue.set(this.lastAnimation, "p4", true);
+          setTimeout(() => {
+            Vue.set(this.lastAnimation, "arrow", true);
+            setTimeout(() => {
+              Vue.set(this.lastAnimation, "button", true);
+            }, 2000);
+          }, 700);
+        }, 700);
+      }, 700);
+    }, 700);
+  }
+  //关闭海报页面打开最后的页面
+  imgBoxClose() {
+    const self = this;
+    this.isShowImgBox = false;
+    this.lastWeb = true;
+    setTimeout(() => {
+      self.lastAni();
+    }, 300);
+  }
+  //返回并在local中存入openId
+  setOpenId(e: string): string {
+    // localStorage.setItem("hhl_openId", e.split("=")[1]);
+    return e.split("=")[1];
+  }
+  //获取微信权限
+  getJsSign() {
+    const self = this;
+    const url = location.href.split("#")[0];
+    localStorage.clear();
+    //todo 本地
+    // url =
+    // "http://qrhhl.yunyutian.cn/national/index.html?openid=oXslc08kYzfJOxRnOpnCQR4EYULU";
+    const openId = this.setOpenId(url);
+    const share = {
+      title: "月满团圆，感恩有你",
+      desc: "月上层楼话团圆·鹤舞九天庆中秋",
+      link:
+        "https://wx.hhl1916.com/huanghelou1916-center/wx/gCode?name=toNational",
+      imgUrl: "https://pic.cwyyt.cn/upload/20200921/115802582_shareImg.jpg"
+    };
+    // eslint-disable-next-line
+    api.getjsSdk(url).then((res: any) => {
+      const value = res.data.data;
+      // eslint-disable-next-line
+      (self as any).wx.config({
+        debug: false,
+        appId: value.appid,
+        timestamp: value.timestamp, // 必填，生成签名的时间戳
+        nonceStr: value.nonceStr, // 必填，生成签名的随机串
+        signature: value.signature, // 必填，签名
+        jsApiList: [
+          "getLocation",
+          "hideMenuItems",
+          "onMenuShareAppMessage",
+          "onMenuShareTimeline"
+        ] // 必填，需要使用的JS接口列表
+      });
+      // eslint-disable-next-line
+      (self as any).wx.ready(function() {
+        // eslint-disable-next-line
+        (self as any).wx.getLocation({
+          type: "wgs84",
+          // eslint-disable-next-line
+          success: function(res: any) {
+            const data = {
+              openid: openId,
+              latitude: res.latitude || 0,
+              longitude: res.longitude || 0
+            };
+            self.getUserInfo(data);
+          },
+          fail: function() {
+            const data = {
+              openid: openId,
+              latitude: 0,
+              longitude: 0
+            };
+            self.getUserInfo(data);
+          }
+        });
+        // eslint-disable-next-line
+        (self as any).wx.hideMenuItems({
+          menuList: [
+            "menuItem:editTag",
+            "menuItem:copyUrl",
+            "menuItem:originPage",
+            "menuItem:openWithQQBrowser",
+            "menuItem:openWithSafari",
+            "menuItem:share:email",
+            "menuItem:share:brand"
+          ]
+        });
+        // eslint-disable-next-line
+        (self as any).wx.onMenuShareTimeline({
+          title: share.title, // 分享标题
+          link: share.link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+          imgUrl: share.imgUrl, // 分享图标
+          success: function() {
+            // 设置成功
+            // self.shareGame();
+          }
+        });
+        // eslint-disable-next-line
+        (self as any).wx.onMenuShareAppMessage({
+          title: share.title, // 分享标题
+          desc: share.desc, //分享描述
+          link: share.link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+          imgUrl: share.imgUrl, // 分享图标
+          type: "", // 分享类型,music、video或link，不填默认为link
+          dataUrl: "", // 如果type是music或video，则要提供数据链接，默认为空
+          success: function() {
+            // 设置成功
+            // self.shareGame();
+          }
+        });
+      });
+    });
+  }
+  //获取用户信息
+  getUserInfo(e: any) {
+    const self = this;
+    // eslint-disable-next-line
+    api.getUserInfo(e).then((res: any) => {
+      localStorage.setItem(
+        "hhl_fullMoon_userInfo",
+        JSON.stringify(res.data.data)
+      );
+      self.userInfo = res.data.data;
+    });
+  }
+  //分享成功
+  // shareGame() {}
+  //开始触摸
+  touchStart(t: any) {
+    this.t1 = t.changedTouches[0].clientY;
+  }
+  //结束触摸
+  touchEnd(t: any) {
+    this.t2 = t.changedTouches[0].clientY;
+  }
+  //向上滑动
+  topTouch() {
+    this.poetryText.unshift(this.poetryText[this.poetryText.length - 1]);
+    this.poetryText.splice(this.poetryText.length - 1, 1);
+  }
+  //向下滑动
+  bottomTouch() {
+    this.poetryText[this.poetryText.length] = this.poetryText[0];
+    this.poetryText.splice(0, 1);
+  }
   //选择诗词的确定
-  choseConfirm() {}
+  choseConfirm() {
+    const self = this;
+    //接口获取图片
+    if (this.imgText === null) {
+      alert("截取图片失败");
+      return;
+    }
+    if (this.userInfo === null) {
+      alert("获取用户信息失败！");
+      return;
+    }
+    const text = this.imgText;
+    let t = this.poetryText[0].p1;
+    if (this.poetryText[0].p2 !== "") {
+      t = t + "," + this.poetryText[0].p2;
+    }
+    const data = {
+      base64Str: text,
+      greeting: t,
+      latitude: this.userInfo.latitude,
+      longitude: this.userInfo.longitude,
+      userId: this.userInfo.id
+    };
+    api.getImg(data).then((res: any) => {
+      const image = new Image();
+      image.src = res.data.data;
+      image.width = window.innerWidth;
+      image.height = window.innerHeight;
+      (self.$refs.imgBox as Element).appendChild(image);
+      image.onload = () => {
+        setTimeout(() => {
+          self.isShowImgBox = true;
+        }, 300);
+      };
+    });
+  }
   //截图
   screenShot() {
     const self = this;
-    console.log("截图");
-    html2canvas(self.$refs.shotImage, {
+    const elm = self.$refs.shotImage as HTMLElement;
+    html2canvas(elm, {
       width: window.innerWidth,
       height: window.innerHeight
     }).then(canvas => {
-      var image = new Image();
+      const image = new Image();
       const img = canvas.toDataURL("image/jpeg");
       image.src = img;
       self.isBlur = true;
       self.isChoseBox = true;
+      self.imgText = img;
       // document.body.appendChild(image);
       // console.log(image);
     });
   }
+
   //动态显示地图阴影
   showlight() {
     const self = this;
@@ -339,7 +613,7 @@ export default class page extends Vue {
       .rotation(3, -93, 0)
       .updateT(),
       // 为此元素绑定触摸事件，此处可以用于点击时，执行一些操作。
-      i.on("touchend", function(e) {
+      i.on("touchend", function(e: any) {
         self.showAnimation();
       }),
       (i.r0 = Q),
@@ -355,34 +629,34 @@ export default class page extends Vue {
   panoBg() {
     // 定义背景图片的个数
     const bgImage = [
-      require("../static/pageBox/pageBox_02.jpg"),
-      require("../static/pageBox/pageBox_03.jpg"),
-      require("../static/pageBox/pageBox_04.jpg"),
-      require("../static/pageBox/pageBox_05.jpg"),
-      require("../static/pageBox/pageBox_06.jpg"),
-      require("../static/pageBox/pageBox_07.jpg"),
-      require("../static/pageBox/pageBox_08.jpg"),
-      require("../static/pageBox/pageBox_09.jpg"),
-      require("../static/pageBox/pageBox_10.jpg"),
-      require("../static/pageBox/pageBox_11.jpg"),
-      require("../static/pageBox/pageBox_12.jpg"),
-      require("../static/pageBox/pageBox_13.jpg"),
-      require("../static/pageBox/pageBox_14.jpg"),
-      require("../static/pageBox/pageBox_15.jpg"),
-      require("../static/pageBox/pageBox_16.jpg"),
-      require("../static/pageBox/pageBox_17.jpg"),
-      require("../static/pageBox/pageBox_18.jpg"),
-      require("../static/pageBox/pageBox_19.jpg"),
-      require("../static/pageBox/pageBox_20.jpg"),
-      require("../static/pageBox/pageBox_01.jpg")
+      require("../static/pageBox/pageBox_02.png"),
+      require("../static/pageBox/pageBox_03.png"),
+      require("../static/pageBox/pageBox_04.png"),
+      require("../static/pageBox/pageBox_05.png"),
+      require("../static/pageBox/pageBox_06.png"),
+      require("../static/pageBox/pageBox_07.png"),
+      require("../static/pageBox/pageBox_08.png"),
+      require("../static/pageBox/pageBox_09.png"),
+      require("../static/pageBox/pageBox_10.png"),
+      require("../static/pageBox/pageBox_11.png"),
+      require("../static/pageBox/pageBox_12.png"),
+      require("../static/pageBox/pageBox_13.png"),
+      require("../static/pageBox/pageBox_14.png"),
+      require("../static/pageBox/pageBox_15.png"),
+      require("../static/pageBox/pageBox_16.png"),
+      require("../static/pageBox/pageBox_17.png"),
+      require("../static/pageBox/pageBox_18.png"),
+      require("../static/pageBox/pageBox_19.png"),
+      require("../static/pageBox/pageBox_20.png"),
+      require("../static/pageBox/pageBox_01.png")
     ];
-    const bg_num = bgImage.length;
+    const bgNum = bgImage.length;
     // 背景的宽高信息，也就是那张背景大图的宽高 bgInfo
     this.bgInfo = {
       //图片宽高
       o: { w: 4000, h: 3000 },
       //被均分的图片宽度
-      M: 4000 / bg_num,
+      M: 4000 / bgNum,
       //图片间隔系数，根据大图宽度调整
       h: 625
     };
@@ -395,9 +669,9 @@ export default class page extends Vue {
       .rotation(0, -50, 0)
       .update();
     this.root.addChild(this.panoBgBox);
-    for (var R = 0; R < bg_num; R++) {
-      var F = new C3D.Plane(),
-        H = (-360 / bg_num) * R,
+    for (let R = 0; R < bgNum; R++) {
+      const F = new C3D.Plane(),
+        H = (-360 / bgNum) * R,
         J = (H / 180) * Math.PI,
         U = this.bgInfo.h;
 
@@ -427,9 +701,9 @@ export default class page extends Vue {
       if (t.lat < 70 && t.lat > -80) {
         self.aim.lat = t.lat;
       }
-      if (t.lon < 135 || t.lon > 200) {
-        self.aim.lon = -t.lon;
-      }
+      // if (t.lon < 135 || t.lon > 200) {
+      self.aim.lon = -t.lon;
+      // }
 
       // if (self.lock) {
       //   self.fix.lat = -self.aim.lat;
@@ -441,19 +715,19 @@ export default class page extends Vue {
   //添加触摸模式
   onTouch(e: HTMLElement) {
     const self = this;
-    var originTouchPos = {
-        x: 0,
-        y: 0
-      },
-      oldTouchPos = {
-        x: 0,
-        y: 0
-      },
-      newTouchPos = {
-        x: 0,
-        y: 0
-      },
-      firstDir = "",
+    const originTouchPos = {
+      x: 0,
+      y: 0
+    };
+    const oldTouchPos = {
+      x: 0,
+      y: 0
+    };
+    const newTouchPos = {
+      x: 0,
+      y: 0
+    };
+    let firstDir = "",
       originTime = 0,
       oldTime = 0,
       newTime = 0,
@@ -462,19 +736,7 @@ export default class page extends Vue {
       ax = 0,
       ay = 0,
       time = 0;
-
-    // touchstart事件处理函数
-    var onTouchStart = function(t: any) {
-      (firstDir = ""), (t = t.changedTouches[0]);
-      originTouchPos.x = oldTouchPos.x = newTouchPos.x = t.clientX;
-      originTouchPos.y = oldTouchPos.y = newTouchPos.y = t.clientY;
-      originTime = oldTime = newTime = Date.now();
-      (dx = dy = ax = ay = 0),
-        self.stage.on("touchmove", onTouchMove),
-        self.stage.on("touchend", onTouchEnd);
-    };
-    self.stage.on("touchstart", onTouchStart);
-    var onTouchMove = function(t: any) {
+    const onTouchMove = function(t: any) {
       self.stage.off("touchend", onTouchEnd);
       return (
         (t = t.changedTouches[0]),
@@ -488,9 +750,9 @@ export default class page extends Vue {
         !1
       );
     };
-    var onTouchEnd = function(e: any) {
+    const onTouchEnd = function(e: any) {
       newTime = Date.now();
-      var t = (newTime - oldTime) / 1e3;
+      const t = (newTime - oldTime) / 1e3;
 
       // 这里可以通过e.target获取到触发了此touchend事件的dom对象，
       // 这样就可以根据此对象来判断是点击了哪个场景的元素。当然，可以直接为元素绑定点击事件，在此处绑定
@@ -499,6 +761,17 @@ export default class page extends Vue {
       self.stage.off("touchmove", onTouchMove),
         self.stage.off("touchend", onTouchEnd);
     };
+    // touchstart事件处理函数
+    const onTouchStart = function(t: any) {
+      (firstDir = ""), (t = t.changedTouches[0]);
+      originTouchPos.x = oldTouchPos.x = newTouchPos.x = t.clientX;
+      originTouchPos.y = oldTouchPos.y = newTouchPos.y = t.clientY;
+      originTime = oldTime = newTime = Date.now();
+      (dx = dy = ax = ay = 0),
+        self.stage.on("touchmove", onTouchMove),
+        self.stage.on("touchend", onTouchEnd);
+    };
+    self.stage.on("touchstart", onTouchStart);
 
     const checkGesture = function() {
       (dx = self.fixed2(newTouchPos.x - originTouchPos.x)),
@@ -532,7 +805,7 @@ export default class page extends Vue {
 		);*/
     t - this.panoBgBox.rotationY > 180 && (this.panoBgBox.rotationY += 360),
       t - this.panoBgBox.rotationY < -180 && (this.panoBgBox.rotationY -= 360);
-    var n = t - this.panoBgBox.rotationY,
+    const n = t - this.panoBgBox.rotationY,
       a = i - this.panoBgBox.rotationX;
     Math.abs(n) < 0.1
       ? (this.panoBgBox.rotationY = t)
@@ -551,7 +824,7 @@ export default class page extends Vue {
       t - this.panoItems.rotationY > 180 && (this.panoItems.rotationY += 360),
       t - this.panoItems.rotationY < -180 && (this.panoItems.rotationY -= 360);
     // console.log(this.panoItems.rotationY)
-    var o = t - this.panoItems.rotationY,
+    const o = t - this.panoItems.rotationY,
       r = i - this.panoItems.rotationX;
     Math.abs(o) < 0.1
       ? (this.panoItems.rotationY = t)
@@ -585,7 +858,6 @@ export default class page extends Vue {
           alpha: 1,
           ease: JT.Quad.Out,
           onUpdate: function() {
-            console.log(actor);
             actor.visibility({ alpha: 1 }).updateV();
           }
         });
@@ -617,318 +889,7 @@ export default class page extends Vue {
   modelRandom(n1: number, n2: number): number {
     return n1 + Math.floor(Math.random() * (n2 - n1) * 100) / 100;
   }
-  pano(e: any) {
-    const self = this;
-    var starSky = new C3D.Sprite();
-    starSky
-      .name("starSky")
-      .position(0, 0, 0)
-      .rotation(0, 0, 0)
-      .update();
-    var _starMax = 100;
-    for (var i = 0; i < _starMax; i++) {
-      var _lon = this.modelRandom(0, 360);
-      var _lat = this.modelRandom(-80, 80);
-      var _l = this.modelRandom(1000, 3000);
-      var _alon = (_lon / 180) * Math.PI;
-      var _alat = (_lat / 180) * Math.PI;
-      var _x = Math.cos(_alat) * _l * Math.sin(_alon);
-      var _y = Math.sin(_alat) * _l;
-      var _z = -Math.cos(_alat) * _l * Math.cos(_alon);
 
-      var _p = new C3D.Plane();
-      _p.size(34, 34)
-        .sort("Y", "X", "Z")
-        .position(_x, _y, _z)
-        .rotation(_lat, -_lon, 0)
-        .material({
-          image: require("../static/demo/star.png"),
-          bothsides: false
-        })
-        .update();
-
-      // var _p = C3D.create({
-      //     type: 'sprite', position: [_x, _y, _z], rotation: [0, -_lon, 0], children: [
-      //         {
-      //             type: 'plane', rotation: [_lat, 0, 0], size: [34, 34], material: [{
-      //             image: './images/star.png',
-      //             bothsides: false,
-      //         }]
-      //         }
-      //     ]
-      // });
-      starSky.addChild(_p);
-    }
-    e.addChild(starSky);
-
-    setInterval(function() {
-      var _star = starSky.children[Math.floor(Math.random() * _starMax)];
-      JT.kill(_star);
-      JT.fromTo(
-        _star,
-        0.5,
-        { alpha: 1 },
-        {
-          alpha: 0,
-          yoyo: true,
-          repeat: 1,
-          onUpdate: function() {
-            this.target.updateV();
-          }
-        }
-      );
-    }, 1000 / 20);
-
-    var actorData = [
-      {
-        name: "p1",
-        lon: 180,
-        lat: -35,
-        actor: {
-          w: 161,
-          h: 166,
-          x: 0,
-          y: 0,
-          url: require("../static/demo/p1.png")
-        },
-        info: {
-          w: 161,
-          h: 121,
-          x: -120,
-          y: 60,
-          url: require("../static/demo/p1t.png")
-        }
-      },
-      {
-        name: "p2",
-        lon: 220,
-        lat: 30,
-        actor: {
-          w: 179,
-          h: 171,
-          x: 0,
-          y: 0,
-          url: require("../static/demo/p2.png")
-        },
-        info: {
-          w: 161,
-          h: 122,
-          x: -120,
-          y: 60,
-          url: require("../static/demo/p2t.png")
-        }
-      },
-      {
-        name: "p3",
-        lon: 40,
-        lat: 20,
-        actor: {
-          w: 166,
-          h: 158,
-          x: 0,
-          y: 0,
-          url: require("../static/demo/p3.png")
-        },
-        info: {
-          w: 244,
-          h: 186,
-          x: 100,
-          y: 50,
-          url: require("../static/demo/p3t.png")
-        }
-      },
-      {
-        name: "p4",
-        lon: 140,
-        lat: 10,
-        actor: {
-          w: 154,
-          h: 163,
-          x: 0,
-          y: 0,
-          url: require("../static/demo/p4.png")
-        },
-        info: {
-          w: 201,
-          h: 147,
-          x: -70,
-          y: 80,
-          url: require("../static/demo/p4t.png")
-        }
-      },
-      {
-        name: "p5",
-        lon: 80,
-        lat: -25,
-        actor: {
-          w: 152,
-          h: 154,
-          x: 0,
-          y: 0,
-          url: require("../static/demo/p5.png")
-        },
-        info: {
-          w: 196,
-          h: 164,
-          x: 130,
-          y: 50,
-          url: require("../static/demo/p5t.png")
-        }
-      },
-      {
-        name: "p6",
-        lon: 260,
-        lat: -30,
-        actor: {
-          w: 156,
-          h: 171,
-          x: 0,
-          y: 0,
-          url: require("../static/demo/p6.png")
-        },
-        info: {
-          w: 166,
-          h: 142,
-          x: -70,
-          y: 80,
-          url: require("../static/demo/p6t.png")
-        }
-      },
-      {
-        name: "p7",
-        lon: 300,
-        lat: 20,
-        actor: {
-          w: 244,
-          h: 161,
-          x: 0,
-          y: 0,
-          url: require("../static/demo/p7.png")
-        },
-        info: {
-          w: 202,
-          h: 126,
-          x: 120,
-          y: 80,
-          url: require("../static/demo/p7t.png")
-        }
-      }
-    ];
-    var actors = new C3D.Sprite();
-    actors
-      .name("actors")
-      .position(0, 0, 0)
-      .update();
-    var _len = actorData.length;
-    actorData.forEach(function(obj, i) {
-      var _data = obj;
-      var _lon = _data.lon;
-      var _lat = _data.lat;
-      var _l = 800;
-      var _alon = (_lon / 180) * Math.PI;
-      var _alat = (_lat / 180) * Math.PI;
-      var _x = Math.cos(_alat) * _l * Math.sin(_alon);
-      var _y = Math.sin(_alat) * _l;
-      var _z = -Math.cos(_alat) * _l * Math.cos(_alon);
-      var _item = C3D.create({
-        type: "sprite",
-        name: _data.name,
-        position: [_x, _y, _z],
-        rotation: [0, -_lon, 0],
-        scale: [2],
-        children: [
-          {
-            type: "plane",
-            name: "actor",
-            position: [_data.actor.x, _data.actor.y, 0],
-            size: [_data.actor.w, _data.actor.h],
-            material: [{ image: _data.actor.url, bothsides: false }]
-          },
-          {
-            type: "plane",
-            name: "info",
-            // position: [_data.info.x, _data.info.y, 10],
-            scale: [0, 0, 1],
-            size: [_data.info.w, _data.info.h],
-            visibility: [{ alpha: 0 }],
-            material: [{ image: _data.info.url, bothsides: false }]
-          }
-        ]
-      });
-
-      JT.to(_item, 3, {
-        y: "+=50",
-        ease: JT.Quad.InOut,
-        repeat: -1,
-        yoyo: true,
-        delay: Math.random() * 3,
-        onUpdate: function() {
-          this.target.updateT();
-        }
-      });
-
-      _item.r0 = _lon;
-      _item.data = _data;
-
-      actors.addChild(_item);
-    });
-    this.stage.addChild(actors);
-
-    var otherData = [
-      { w: 136, h: 136, url: "other1.png" },
-      { w: 95, h: 104, url: "other2.png" },
-      { w: 111, h: 108, url: "other3.png" },
-      { w: 103, h: 79, url: "other4.png" },
-      { w: 80, h: 75, url: "other5.png" }
-    ];
-    var others = new C3D.Sprite();
-    others
-      .name("others")
-      .position(0, 0, 0)
-      .update();
-    var _len = otherData.length;
-    for (var i = 0, _max = 5; i < _max; i++) {
-      var _id = i % _len;
-      var _data = otherData[_id];
-      var _lon = this.modelRandom(0, 360);
-      var _lat = this.modelRandom(30, -30);
-      var _l = 1600;
-      var _alon = (_lon / 180) * Math.PI;
-      var _alat = (_lat / 180) * Math.PI;
-      var _x = Math.cos(_alat) * _l * Math.sin(_alon);
-      var _y = Math.sin(_alat) * _l;
-      var _z = -Math.cos(_alat) * _l * Math.cos(_alon);
-      var _item = C3D.create({
-        type: "plane",
-        size: [_data.w, _data.h],
-        position: [_x, _y, _z],
-        rotation: [0, -_lon, 0],
-        scale: [2],
-        material: [{ image: "./images/" + _data.url, bothsides: false }]
-      });
-
-      others.addChild(_item);
-    }
-    this.stage.addChild(others);
-
-    var home = C3D.create({
-      type: "plane",
-      size: [360, 1060],
-      position: [0, 0, -800],
-      scale: [2],
-      material: [{ image: "./images/home.png", bothsides: false }]
-    });
-    this.stage.addChild(home);
-
-    var curve = C3D.create({
-      type: "plane",
-      size: [2551, 304],
-      position: [0, -600, -800],
-      scale: [2],
-      material: [{ image: "./images/curve.png", bothsides: false }]
-    });
-    this.stage.addChild(curve);
-  }
   //地址页面动画显示
   showAnimation() {
     const self = this;
@@ -948,14 +909,15 @@ export default class page extends Vue {
           //关闭第二页面，开启第三地图页面并开始地图光影效果
           self.isShowBg2 = false;
           self.isShowBg3 = true;
-          self.isLight = true;
-          //第二阶段关闭进入拍照页面
+          setTimeout(() => {
+            self.isLight = true;
+          }, 1500); //第二阶段关闭进入拍照页面
           setTimeout(() => {
             self.isShowBg = false;
             self.isShowBg3 = false;
             self.isLight = false;
             self.photographWeb = true;
-          }, 2000);
+          }, 4000);
         }, 4000);
       }, 4000);
     }, 1000);
@@ -1061,7 +1023,7 @@ export default class page extends Vue {
       .rotation(0, 0, 0)
       .updateT(),
       // 为此元素绑定触摸事件，此处可以用于点击时，执行一些操作。
-      i.on("touchend", function(e) {
+      i.on("touchend", function(e: any) {
         // TODO
         console.log(e);
       }),
@@ -1107,14 +1069,7 @@ export default class page extends Vue {
     height: 80vh;
   }
 }
-@keyframes arcline2 {
-  0% {
-    height: 0;
-  }
-  100% {
-    height: 143vw;
-  }
-}
+
 @keyframes play {
   from {
     background-position: 0 100vw;
@@ -1123,9 +1078,23 @@ export default class page extends Vue {
     background-position: 0 0;
   }
 }
-.fade-enter-active,
-.fade-leave-active {
+@keyframes arrowMove {
+  from {
+    height: 0;
+  }
+  to {
+    height: 10vh;
+  }
+}
+
+.slide-move {
+  transition: transform 1s;
+}
+.fade-enter-active {
   transition: opacity 3s;
+}
+.fade-leave-active {
+  transition: opacity 1.5s;
 }
 .fade-enter,
 .fade-leave-to {
@@ -1137,13 +1106,91 @@ export default class page extends Vue {
   animation-fill-mode: forwards;
 }
 .arcAnimation2 {
-  animation: arcline2 4s linear;
+  animation: arcline 4s linear;
   animation-fill-mode: forwards;
+}
+.lastWeb {
+  @bg();
+  background: url(../static/pageBox/lastBg.png) no-repeat;
+  background-size: 100% 100%;
+  // display: flex;
+  // flex-direction: column;
+  // align-items: center;
+  padding-top: 36vh;
+  box-sizing: border-box;
+  .arrowAnimation {
+    animation: arrowMove 2s linear;
+    animation-fill-mode: forwards;
+  }
+  .arrow {
+    background: url(../static/pageBox/lastArrow.png) no-repeat;
+    background-size: cover;
+    width: 3vw;
+    position: absolute;
+    bottom: 0;
+    margin: 0 48.5vw;
+  }
+  button {
+    background: url(../static/pageBox/lastButton.png) no-repeat;
+    background-size: 100% 100%;
+    outline: none;
+    border: none;
+    width: 56vw;
+    position: absolute;
+    height: 9vw;
+    bottom: 12vh;
+    left: 25vw;
+  }
+  .p1 {
+    background-image: url(../static/pageBox/p1.png);
+  }
+  .p2 {
+    background-image: url(../static/pageBox/p2.png);
+    margin-left: 33vw;
+    box-sizing: border-box;
+  }
+  .p3 {
+    background-image: url(../static/pageBox/p3.png);
+    margin-left: 24vw;
+  }
+  .p4 {
+    background-image: url(../static/pageBox/p4.png);
+  }
+  .lastMoon {
+    background: url(../static/pageBox/lastMoon.png) no-repeat;
+    background-size: 100% 100%;
+    width: 25vw;
+    height: 25vw;
+    position: absolute;
+    left: 10vw;
+    top: 20vh;
+  }
+  p {
+    width: 46vw;
+    height: 7vw;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    margin: 1vh 27vw;
+  }
+}
+.imgBox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  .imgBoxClose {
+    position: absolute;
+    width: 5vw;
+    height: 5vw;
+    top: 5vw;
+    right: 5vw;
+    background: url(../static/pageBox/close.png) no-repeat;
+    background-size: 100% 100%;
+  }
 }
 .arc {
   background: url(../static/pageBox/hu.png) no-repeat;
-  background-size: cover;
-  width: 36vw;
+  background-size: 100% auto;
+  width: 37vw;
   position: absolute;
   top: 20vh;
   height: 0;
@@ -1167,8 +1214,8 @@ export default class page extends Vue {
     width: 100%;
     .left {
       background: url(../static/pageBox/left.png) no-repeat;
-      background-size: 100% 100%;
-      width: 3vw;
+      background-size: 33% 100%;
+      width: 10vw;
       height: 30vw;
       display: flex;
       flex-direction: column;
@@ -1188,11 +1235,14 @@ export default class page extends Vue {
       }
     }
     .center {
-      ul {
-        padding: 0;
-      }
+      padding: 0;
+      height: 30vw;
+      overflow: hidden;
       li {
         height: 30vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
         p {
           font-size: 7vw;
           margin: 0;
@@ -1220,23 +1270,23 @@ export default class page extends Vue {
 .blur {
   filter: blur(2px);
 }
+.tipText {
+  color: #fff;
+  font-size: 4.5vw;
+  position: absolute;
+  width: 50vw;
+  left: 25vw;
+  top: 25vh;
+  p {
+    margin: 1vh 0;
+  }
+}
 .photographWeb {
   @bg();
   background: url(../static/pageBox/bg3.png) no-repeat;
   background-size: cover;
   transition: all 1s;
 
-  .tipText {
-    color: #fff;
-    font-size: 4.5vw;
-    position: absolute;
-    width: 50vw;
-    left: 25vw;
-    top: 25vh;
-    p {
-      margin: 1vh 0;
-    }
-  }
   .randomMoon {
     width: 20vw;
     height: 20vw;

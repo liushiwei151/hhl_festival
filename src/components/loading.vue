@@ -6,7 +6,7 @@
 import { Component, Vue, Prop } from "vue-property-decorator";
 
 @Component({})
-export default class loading extends Vue {
+export default class Loading extends Vue {
   @Prop() imgNum!: number[];
 }
 </script>

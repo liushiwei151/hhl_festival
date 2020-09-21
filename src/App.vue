@@ -1,13 +1,24 @@
 <template>
   <div id="app">
-    <router-view />
+    <router-view v-if="isShow" />
   </div>
 </template>
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
+import { Component, Vue, Provide } from "vue-property-decorator";
 @Component({})
 export default class App extends Vue {
+  @Provide()
+  public restart = this.restartFunction;
+  // 是否显示路由
+  isShow = true;
   mounted(): void {}
+  //重新开始
+  restartFunction() {
+    this.isShow = false;
+    setTimeout(() => {
+      this.isShow = true;
+    }, 0);
+  }
 }
 </script>
 <style lang="less">

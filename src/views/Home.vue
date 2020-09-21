@@ -13,6 +13,8 @@
 </template>
 
 <script lang="ts">
+/* eslint-disable */
+
 import { Component, Vue } from "vue-property-decorator";
 import * as THREE from "three";
 const orienter = require("../common/orienter.js");
@@ -335,9 +337,9 @@ export default class Home extends Vue {
     var vertices = geometry.attributes.position.array;
     var data = this.generateHeight(worldWidth, worldDepth);
 
-    for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
-      vertices[j + 1] = data[i] * 0.00000001;
-    }
+    // for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
+    //   vertices[j + 1] = data[i] * 0.00000001;
+    // }
     const texture = new THREE.CanvasTexture(
       self.generateTexture(data, worldWidth, worldDepth) as HTMLCanvasElement
     );
@@ -445,9 +447,9 @@ export default class Home extends Vue {
     var vertices = geometry.attributes.position.array;
     var data = this.generateHeight(worldWidth, worldDepth);
 
-    for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
-      vertices[j + 1] = data[i] * 10;
-    }
+    // for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
+    //   vertices[j + 1] = data[i] * 10;
+    // }
     // 加载纹理贴图
     const textureLoader = new THREE.TextureLoader();
     var texture = textureLoader.load(require("../static/dusk.jpg"));
@@ -803,7 +805,7 @@ export default class Home extends Vue {
     div {
       width: 90vw;
       height: 90vh;
-      background: url(../static/teachImg.png) no-repeat;
+      background: url(../static/pageBox/teachImg.png) no-repeat;
       background-size: cover;
     }
   }
