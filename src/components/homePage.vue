@@ -73,6 +73,9 @@ export default class homePage extends Vue {
     require("../static/pageBox/p2.png"),
     require("../static/pageBox/p3.png"),
     require("../static/pageBox/p4.png"),
+    require("../static/pageBox/point.png"),
+    require("../static/pageBox/position.png"),
+    require("../static/pageBox/teachImg.png"),
     require("../static/pageBox/pageBox_01.png"),
     require("../static/pageBox/pageBox_02.png"),
     require("../static/pageBox/pageBox_03.png"),
@@ -92,10 +95,7 @@ export default class homePage extends Vue {
     require("../static/pageBox/pageBox_17.png"),
     require("../static/pageBox/pageBox_18.png"),
     require("../static/pageBox/pageBox_19.png"),
-    require("../static/pageBox/pageBox_20.png"),
-    require("../static/pageBox/point.png"),
-    require("../static/pageBox/position.png"),
-    require("../static/pageBox/teachImg.png")
+    require("../static/pageBox/pageBox_20.png")
   ];
   //当前图片加载数量
   count = 0;

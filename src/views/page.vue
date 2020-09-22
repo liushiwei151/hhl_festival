@@ -18,7 +18,7 @@
       <home-page @startGame.once="getGrant" v-show="isShowPage"></home-page>
     </transition>
     <!-- 显示地址的动画 -->
-    <transition name="fade">
+    <transition name="fades">
       <div class="bg2" v-show="isShowBg">
         <transition name="fade">
           <div class="position" v-show="isShowBg1">
@@ -26,26 +26,21 @@
             <p>您现在的位置: {{ userInfo.city }}</p>
             <p>东经: {{ userInfo.longitude }}</p>
             <p>北纬: {{ userInfo.latitude }}</p>
-            <div class="arc" :class="{ arcAnimation: arcAnimation }"></div>
-          </div>
-        </transition>
-        <transition name="fade">
-          <div class="arcWeb" v-show="isShowBg2">
-            <div
-              class="arc"
-              style="top:0"
-              :class="{ arcAnimation2: arcAnimation2 }"
-            ></div>
             <div class="arcText">
               <p>为您空降</p>
               <p>湖北·武汉·黄鹤楼</p>
               <p>最佳赏月地点</p>
             </div>
+            <div class="arc" :class="{ arcAnimation: arcAnimation }"></div>
           </div>
         </transition>
 
         <transition name="fade">
           <div class="mapBox" v-show="isShowBg3">
+            <div
+              class="arc arc2"
+              :class="{ arcAnimation2: arcAnimation2 }"
+            ></div>
             <div class="mapImg" :class="{ light: isLight }"></div>
             <div class="mapText"></div>
           </div>
@@ -200,12 +195,10 @@ export default class Page extends Vue {
   isShowBg = false;
   //是否显示弧线动画
   arcAnimation = false;
-  //第二个弧线动画
+  //第二张图的弧线动画
   arcAnimation2 = false;
   //是否显示经纬度页面1
   isShowBg1 = true;
-  //是否显示弧线提示页面2
-  isShowBg2 = false;
   //是否显示地图页面3
   isShowBg3 = false;
   //是否显示地图光晕
@@ -250,7 +243,7 @@ export default class Page extends Vue {
     button: false
   };
   //测试开关
-  ceshi = true;
+  ceshi = false;
 
   get moonPosition(): string {
     const num = Math.random() * 60 + 10;
@@ -274,10 +267,10 @@ export default class Page extends Vue {
     this.init();
     if (this.ceshi) {
       this.isShowPage = false;
-      this.showAnimation();
+      // this.showAnimation();
       // this.photographWeb = true;
       // this.isChoseBox = true;
-      // this.actiondh();
+      this.actiondh();
     }
     // this.actiondh();
     // window.onresize = function() {
@@ -472,7 +465,7 @@ export default class Page extends Vue {
     this.t2 = t.changedTouches[0].clientY;
   }
   //向上滑动
-  topTouch() {
+  bottomTouch() {
     this.poetryTextId += 1;
     if (this.poetryTextId > this.poetryText.length) {
       this.poetryTextId = 1;
@@ -481,7 +474,7 @@ export default class Page extends Vue {
     // this.poetryText.splice(this.poetryText.length - 1, 1);
   }
   //向下滑动
-  bottomTouch() {
+  topTouch() {
     this.poetryTextId -= 1;
     if (this.poetryTextId < 1) {
       this.poetryTextId = this.poetryText.length;
@@ -502,9 +495,9 @@ export default class Page extends Vue {
       return;
     }
     const text = this.imgText;
-    let t = this.poetryText[0].p1;
-    if (this.poetryText[0].p2 !== "") {
-      t = t + "," + this.poetryText[0].p2;
+    let t = this.poetryText[this.poetryTextId - 1].p1;
+    if (this.poetryText[this.poetryTextId - 1].p2 !== "") {
+      t = t + "," + this.poetryText[this.poetryTextId - 1].p2;
     }
     const data = {
       base64Str: text,
@@ -520,10 +513,10 @@ export default class Page extends Vue {
       image.width = window.innerWidth;
       image.height = window.innerHeight;
       (self.$refs.imgBox as Element).appendChild(image);
-      self.tip(false);
       image.onload = () => {
         setTimeout(() => {
           self.isShowImgBox = true;
+          self.tip(false);
         }, 300);
       };
     });
@@ -593,7 +586,7 @@ export default class Page extends Vue {
     this.addMoon();
     //添加教学
     // this.addTeach();
-    //测试用，绑定鼠标移动
+    //测试用，绑定鼠标移动 todo
     // this.onTouch(stageDiv);
     //播放教学动画
     //刷新动画
@@ -820,7 +813,6 @@ export default class Page extends Vue {
 
       // 这里可以通过e.target获取到触发了此touchend事件的dom对象，
       // 这样就可以根据此对象来判断是点击了哪个场景的元素。当然，可以直接为元素绑定点击事件，在此处绑定
-      // TODO
 
       self.stage.off("touchmove", onTouchMove),
         self.stage.off("touchend", onTouchEnd);
@@ -963,24 +955,20 @@ export default class Page extends Vue {
     //开始弧线动画
     setTimeout(() => {
       self.arcAnimation = true;
-      // 开始二阶段第二页面，并关闭第一页面经纬度
+
       setTimeout(() => {
+        //关闭第二页面，开启第三地图页面并开始地图光影效果
         self.isShowBg1 = false;
-        self.isShowBg2 = true;
+        self.isShowBg3 = true;
         self.arcAnimation2 = true;
         setTimeout(() => {
-          //关闭第二页面，开启第三地图页面并开始地图光影效果
-          self.isShowBg2 = false;
-          self.isShowBg3 = true;
-          setTimeout(() => {
-            self.isLight = true;
-          }, 1500); //第二阶段关闭进入拍照页面
-          setTimeout(() => {
-            self.isShowBg = false;
-            self.isShowBg3 = false;
-            self.isLight = false;
-            self.photographWeb = true;
-          }, 4000);
+          self.isLight = true;
+        }, 1500); //第二阶段关闭进入拍照页面
+        setTimeout(() => {
+          self.isShowBg = false;
+          self.isShowBg3 = false;
+          self.isLight = false;
+          self.photographWeb = true;
         }, 4000);
       }, 4000);
     }, 1000);
@@ -1130,6 +1118,14 @@ export default class Page extends Vue {
     height: 80vh;
   }
 }
+@keyframes arcline2 {
+  0% {
+    height: 0;
+  }
+  100% {
+    height: 100vw;
+  }
+}
 
 @keyframes play {
   from {
@@ -1157,8 +1153,8 @@ export default class Page extends Vue {
 .fade-leave-active {
   transition: opacity 1.5s;
 }
-.fades-enter,
-.fades-leave-to {
+.fade-enter,
+.fade-leave-to {
   opacity: 0;
 }
 .fades-enter-active {
@@ -1177,7 +1173,7 @@ export default class Page extends Vue {
   animation-fill-mode: forwards;
 }
 .arcAnimation2 {
-  animation: arcline 4s linear;
+  animation: arcline2 4s linear;
   animation-fill-mode: forwards;
 }
 .lastWeb {
@@ -1266,6 +1262,11 @@ export default class Page extends Vue {
   top: 20vh;
   height: 0;
   left: 25vw;
+}
+.arc2 {
+  top: -62vw;
+  left: 32vw;
+  z-index: 90;
 }
 .choseBox {
   @bg();
@@ -1368,7 +1369,8 @@ export default class Page extends Vue {
     @bg();
     position: absolute;
     background: url(../static/pageBox/bg3.png) no-repeat;
-    background-size: 100% 100%;
+    // background-size: 100% 100%;
+    background-size: cover;
   }
 
   .randomMoon {
@@ -1397,6 +1399,9 @@ export default class Page extends Vue {
     flex-direction: column;
     align-items: center;
     margin: auto;
+    position: absolute;
+    top: 35vw;
+    transition: all 2s;
     .mapImg {
       width: 90vw;
       height: 100vw;
@@ -1415,7 +1420,10 @@ export default class Page extends Vue {
       background-size: 100% 100%;
     }
   }
-  .arcWeb {
+
+  .position {
+    margin-top: 10vh;
+    transition: all 3s;
     .arcText {
       position: absolute;
       width: 50vw;
@@ -1426,10 +1434,6 @@ export default class Page extends Vue {
     p {
       margin: 1vw 0;
     }
-  }
-  .position {
-    margin-top: 10vh;
-    transition: opacity 3s;
     .positionPoint {
       background: url(../static/pageBox/position.png) no-repeat;
       background-size: 100% 100%;
