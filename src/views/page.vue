@@ -81,20 +81,26 @@
         @touchstart="touchStart"
         @touchend="touchEnd"
       >
-        <div>
+        <div class="choseBox-text">
           <p>上下滑动</p>
           <p>选择诗词</p>
         </div>
         <div class="contentBox">
           <div class="left"></div>
           <transition-group tag="ul" class="center" name="slide" mode="out-in">
-            <li v-for="item in poetryText" :key="item.id">
+            <li
+              v-for="item in poetryText"
+              :style="{
+                top: (item.id - 1) * -30 + (poetryTextId - 1) * 30 + 'vw'
+              }"
+              :key="item.id"
+            >
               <p>{{ item.p1 }}</p>
               <p>{{ item.p2 }}</p>
             </li>
           </transition-group>
           <div class="right">
-            <span>{{ poetryText[0].id }}</span>
+            <span>{{ poetryTextId }}</span>
             <span class="xian"></span>
             <span>{{ poetryText.length }}</span>
           </div>
@@ -103,7 +109,7 @@
       </div>
     </transition>
     <!-- 返回的图片 -->
-    <transition name="fade">
+    <transition name="fades">
       <div class="imgBox" ref="imgBox" v-show="isShowImgBox">
         <div class="imgBoxClose" @click="imgBoxClose"></div>
       </div>
@@ -226,6 +232,8 @@ export default class Page extends Vue {
     { p1: "佳节必有黄鹤楼", p2: "", id: 8 },
     { p1: "月上层楼话团圆", p2: "鹤舞九天庆中秋", id: 9 }
   ];
+  //当前选中的诗词id
+  poetryTextId = 1;
   //诗词页面触摸手机屏幕开始y坐标
   t1 = 0;
   //诗词页面触摸结束结束y坐标
@@ -242,7 +250,7 @@ export default class Page extends Vue {
     button: false
   };
   //测试开关
-  ceshi = false;
+  ceshi = true;
 
   get moonPosition(): string {
     const num = Math.random() * 60 + 10;
@@ -266,7 +274,8 @@ export default class Page extends Vue {
     this.init();
     if (this.ceshi) {
       this.isShowPage = false;
-      this.photographWeb = true;
+      this.showAnimation();
+      // this.photographWeb = true;
       // this.isChoseBox = true;
       // this.actiondh();
     }
@@ -464,13 +473,21 @@ export default class Page extends Vue {
   }
   //向上滑动
   topTouch() {
-    this.poetryText.unshift(this.poetryText[this.poetryText.length - 1]);
-    this.poetryText.splice(this.poetryText.length - 1, 1);
+    this.poetryTextId += 1;
+    if (this.poetryTextId > this.poetryText.length) {
+      this.poetryTextId = 1;
+    }
+    // this.poetryText.unshift(this.poetryText[this.poetryText.length - 1]);
+    // this.poetryText.splice(this.poetryText.length - 1, 1);
   }
   //向下滑动
   bottomTouch() {
-    this.poetryText[this.poetryText.length] = this.poetryText[0];
-    this.poetryText.splice(0, 1);
+    this.poetryTextId -= 1;
+    if (this.poetryTextId < 1) {
+      this.poetryTextId = this.poetryText.length;
+    }
+    // this.poetryText[this.poetryText.length] = this.poetryText[0];
+    // this.poetryText.splice(0, 1);
   }
   //选择诗词的确定
   choseConfirm() {
@@ -1140,8 +1157,18 @@ export default class Page extends Vue {
 .fade-leave-active {
   transition: opacity 1.5s;
 }
-.fade-enter,
-.fade-leave-to {
+.fades-enter,
+.fades-leave-to {
+  opacity: 0;
+}
+.fades-enter-active {
+  transition: opacity 2s;
+}
+.fades-leave-active {
+  transition: opacity 0.5s;
+}
+.fades-enter,
+.fades-leave-to {
   opacity: 0;
 }
 
@@ -1246,9 +1273,12 @@ export default class Page extends Vue {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 5vh 0;
+  justify-content: center;
   box-sizing: border-box;
+  .choseBox-text {
+    position: absolute;
+    top: 16vh;
+  }
   .contentBox {
     display: flex;
     justify-content: space-between;
@@ -1282,11 +1312,15 @@ export default class Page extends Vue {
       padding: 0;
       height: 30vw;
       overflow: hidden;
+      position: relative;
+      width: 70vw;
       li {
+        position: absolute;
         height: 30vw;
         display: flex;
         flex-direction: column;
         justify-content: space-around;
+        width: 100%;
         p {
           font-size: 7vw;
           margin: 0;
@@ -1299,6 +1333,8 @@ export default class Page extends Vue {
     background-size: 100% 100%;
     width: 36vw;
     height: 8vw;
+    position: absolute;
+    bottom: 10vh;
   }
   p {
     margin: 0;

@@ -24,7 +24,19 @@ export default class App extends Vue {
   msg: string | null = null;
   //是否显示tip
   isShowTip = false;
-  mounted(): void {}
+  mounted(): void {
+    this.prevent();
+  }
+  //紧张页面下拉回弹
+  prevent() {
+    (document.body as HTMLElement).addEventListener(
+      "touchmove",
+      function(ev) {
+        ev.preventDefault();
+      },
+      { passive: false }
+    );
+  }
   //tip
   layerTip(msg: string | boolean) {
     if (msg === false || msg === true) {

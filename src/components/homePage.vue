@@ -189,7 +189,7 @@ export default class homePage extends Vue {
       outline: none;
       border: none;
       position: absolute;
-      bottom: 5vh;
+      bottom: 10vh;
       left: 17.4vw;
     }
     ul {

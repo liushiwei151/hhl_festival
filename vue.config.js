@@ -15,7 +15,7 @@ module.exports = {
   assetsDir: "assets",
   // 设置是否在开发环境下每次保存代码时都启用eslint
   lintOnSave: true,
-  productionSourceMap: true, // 不需要生产环境的 source map 设置false（减小dist文件大小，加速构建）
+  productionSourceMap: false, // 不需要生产环境的 source map 设置false（减小dist文件大小，加速构建）
   devServer: {
     open: true, // npm run serve后自动打开页面
     host: "0.0.0.0", // 匹配本机IP地址(默认是0.0.0.0)
