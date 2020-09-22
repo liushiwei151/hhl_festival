@@ -15,7 +15,7 @@
     </transition>
     <!-- 首页 -->
     <transition name="fade">
-      <home-page @startGame.once="startGame" v-show="isShowPage"></home-page>
+      <home-page @startGame.once="getGrant" v-show="isShowPage"></home-page>
     </transition>
     <!-- 显示地址的动画 -->
     <transition name="fade">
@@ -61,6 +61,7 @@
         @click.stop="screenShot()"
         :class="{ blur: isBlur }"
       >
+        <div class="photoBox"></div>
         <div class="randomMoon" :style="{ left: moonPosition }"></div>
       </div>
     </transition>
@@ -152,6 +153,8 @@ interface User {
 export default class Page extends Vue {
   @Inject()
   private restart!: Function;
+  @Inject()
+  private tip!: Function;
   //是否显示首页
   isShowPage = true;
   requestAnimationFrame =
@@ -263,8 +266,7 @@ export default class Page extends Vue {
     this.init();
     if (this.ceshi) {
       this.isShowPage = false;
-      this.lastWeb = true;
-      this.lastAni();
+      this.photographWeb = true;
       // this.isChoseBox = true;
       // this.actiondh();
     }
@@ -273,6 +275,35 @@ export default class Page extends Vue {
     // self.resize();
     // };
     // self.resize();
+  }
+  //判断是否为ios
+  isIos(): boolean {
+    if (!!navigator.userAgent.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  //ios申请陀螺仪
+  getGrant() {
+    const self = this;
+    if (this.isIos()) {
+      window.DeviceOrientationEvent.requestPermission().then(state => {
+        switch (state) {
+          case "granted":
+            self.startGame();
+            break;
+          case "denied":
+            self.tip("你拒绝了使用陀螺仪");
+            break;
+          case "prompt":
+            self.tip("其他行为");
+            break;
+        }
+      });
+    } else {
+      this.startGame();
+    }
   }
   //结束页面动画效果
   lastAni() {
@@ -310,7 +341,7 @@ export default class Page extends Vue {
   //获取微信权限
   getJsSign() {
     const self = this;
-    const url = location.href.split("#")[0];
+    let url = location.href.split("#")[0];
     localStorage.clear();
     //todo 本地
     // url =
@@ -382,6 +413,10 @@ export default class Page extends Vue {
           imgUrl: share.imgUrl, // 分享图标
           success: function() {
             // 设置成功
+            self.tip("分享成功");
+            setTimeout(() => {
+              self.tip(false);
+            }, 1500);
             // self.shareGame();
           }
         });
@@ -395,6 +430,10 @@ export default class Page extends Vue {
           dataUrl: "", // 如果type是music或video，则要提供数据链接，默认为空
           success: function() {
             // 设置成功
+            self.tip("分享成功");
+            setTimeout(() => {
+              self.tip(false);
+            }, 1500);
             // self.shareGame();
           }
         });
@@ -404,6 +443,7 @@ export default class Page extends Vue {
   //获取用户信息
   getUserInfo(e: any) {
     const self = this;
+    this.tip("wait");
     // eslint-disable-next-line
     api.getUserInfo(e).then((res: any) => {
       localStorage.setItem(
@@ -411,10 +451,9 @@ export default class Page extends Vue {
         JSON.stringify(res.data.data)
       );
       self.userInfo = res.data.data;
+      this.tip(false);
     });
   }
-  //分享成功
-  // shareGame() {}
   //开始触摸
   touchStart(t: any) {
     this.t1 = t.changedTouches[0].clientY;
@@ -438,11 +477,11 @@ export default class Page extends Vue {
     const self = this;
     //接口获取图片
     if (this.imgText === null) {
-      alert("截取图片失败");
+      this.tip("截取图片失败");
       return;
     }
     if (this.userInfo === null) {
-      alert("获取用户信息失败！");
+      this.tip("获取用户信息失败！");
       return;
     }
     const text = this.imgText;
@@ -457,12 +496,14 @@ export default class Page extends Vue {
       longitude: this.userInfo.longitude,
       userId: this.userInfo.id
     };
+    this.tip("wait");
     api.getImg(data).then((res: any) => {
       const image = new Image();
       image.src = res.data.data;
       image.width = window.innerWidth;
       image.height = window.innerHeight;
       (self.$refs.imgBox as Element).appendChild(image);
+      self.tip(false);
       image.onload = () => {
         setTimeout(() => {
           self.isShowImgBox = true;
@@ -473,17 +514,23 @@ export default class Page extends Vue {
   //截图
   screenShot() {
     const self = this;
+    // console
     const elm = self.$refs.shotImage as HTMLElement;
-    html2canvas(elm, {
-      width: window.innerWidth,
-      height: window.innerHeight
-    }).then(canvas => {
+    this.tip("wait");
+    const opts = {
+      useCORS: true, //允许跨域
+      backgroundColor: "rgba(0,0,0,.0)", //或者null，都代表透明
+      scale: window.devicePixelRatio //提高清晰度
+    };
+    html2canvas(elm, opts).then(canvas => {
       const image = new Image();
       const img = canvas.toDataURL("image/jpeg");
       image.src = img;
+      // document.body.appendChild(image);
       self.isBlur = true;
       self.isChoseBox = true;
       self.imgText = img;
+      self.tip(false);
       // document.body.appendChild(image);
       // console.log(image);
     });
@@ -530,7 +577,7 @@ export default class Page extends Vue {
     //添加教学
     // this.addTeach();
     //测试用，绑定鼠标移动
-    this.onTouch(stageDiv);
+    // this.onTouch(stageDiv);
     //播放教学动画
     //刷新动画
     // requestAnimationFrame(function(callback) {
@@ -875,7 +922,6 @@ export default class Page extends Vue {
           alpha: 0,
           ease: JT.Quad.Out,
           onUpdate: function() {
-            console.log(actor);
             actor.visibility({ alpha: 0 }).updateV();
           }
         });
@@ -1025,14 +1071,12 @@ export default class Page extends Vue {
       // 为此元素绑定触摸事件，此处可以用于点击时，执行一些操作。
       i.on("touchend", function(e: any) {
         // TODO
-        console.log(e);
       }),
       (i.r0 = Q),
       (i.w0 = teach.w),
       (i.dot.alpha = 0.5),
       i.dot.updateV(),
       this.teachImg.addChild(i);
-    console.log(this.teachImg);
     this.root.addChild(this.teachImg);
   }
   //响应屏幕调整尺寸
@@ -1283,9 +1327,13 @@ export default class Page extends Vue {
 }
 .photographWeb {
   @bg();
-  background: url(../static/pageBox/bg3.png) no-repeat;
-  background-size: cover;
-  transition: all 1s;
+  position: relative;
+  .photoBox {
+    @bg();
+    position: absolute;
+    background: url(../static/pageBox/bg3.png) no-repeat;
+    background-size: 100% 100%;
+  }
 
   .randomMoon {
     width: 20vw;

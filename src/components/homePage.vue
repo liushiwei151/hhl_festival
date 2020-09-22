@@ -67,7 +67,6 @@ export default class homePage extends Vue {
     require("../static/pageBox/lastMoon.png"),
     require("../static/pageBox/left.png"),
     require("../static/pageBox/map.png"),
-    require("../static/pageBox/map2.png"),
     require("../static/pageBox/mapText.png"),
     require("../static/pageBox/moon.png"),
     require("../static/pageBox/p1.png"),
