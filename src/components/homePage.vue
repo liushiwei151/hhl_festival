@@ -5,7 +5,7 @@
     <transition name="fade">
       <loading :imgNum="imgNum" v-if="isLoading"></loading>
     </transition>
-    <div class="homePage" :style="{ opacity: imgNum[0] / imgNum[1] }">
+    <div class="homePage" :style="{ opacity: imgNum / 100 }">
       <ul>
         <transition-group name="fade">
           <li
@@ -102,8 +102,9 @@ export default class homePage extends Vue {
   //是否显示加载图片进度
   isLoading = true;
 
-  get imgNum(): number[] {
-    return [this.count, Number(this.imgUrl.length)];
+  get imgNum(): number {
+    const num = Math.floor((this.count / Number(this.imgUrl.length)) * 100);
+    return num;
   }
 
   mounted(): void {

@@ -1151,7 +1151,7 @@ export default class Page extends Vue {
   transition: opacity 3s;
 }
 .fade-leave-active {
-  transition: opacity 1.5s;
+  transition: opacity 1s;
 }
 .fade-enter,
 .fade-leave-to {
@@ -1369,8 +1369,8 @@ export default class Page extends Vue {
     @bg();
     position: absolute;
     background: url(../static/pageBox/bg3.png) no-repeat;
-    // background-size: 100% 100%;
-    background-size: cover;
+    background-size: 100% 100%;
+    // background-size: cover;
   }
 
   .randomMoon {

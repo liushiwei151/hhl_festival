@@ -1,5 +1,5 @@
 <template>
-  <div class="loading">{{ imgNum[0] }}/{{ imgNum[1] }}</div>
+  <div class="loading">{{ imgNum }}%</div>
 </template>
 
 <script lang="ts">
@@ -7,7 +7,7 @@ import { Component, Vue, Prop } from "vue-property-decorator";
 
 @Component({})
 export default class Loading extends Vue {
-  @Prop() imgNum!: number[];
+  @Prop() imgNum!: number;
 }
 </script>
 <style lang="less" scoped>
