@@ -20,7 +20,7 @@
     <!-- 显示地址的动画 -->
     <transition name="fades">
       <div class="bg2" v-show="isShowBg">
-        <transition name="fade">
+        <transition name="fades">
           <div class="position" v-show="isShowBg1">
             <div class="positionPoint"></div>
             <p>您现在的位置: {{ userInfo.city }}</p>
@@ -267,7 +267,7 @@ export default class Page extends Vue {
     this.init();
     if (this.ceshi) {
       this.isShowPage = false;
-      // this.showAnimation();
+      this.showAnimation();
       // this.photographWeb = true;
       // this.isChoseBox = true;
       this.actiondh();
@@ -955,20 +955,21 @@ export default class Page extends Vue {
     //开始弧线动画
     setTimeout(() => {
       self.arcAnimation = true;
-
+      //需求修改删除了第二页面
       setTimeout(() => {
-        //关闭第二页面，开启第三地图页面并开始地图光影效果
+        //关闭第一页面，开启第三地图页面并开始地图光影效果
         self.isShowBg1 = false;
         self.isShowBg3 = true;
         self.arcAnimation2 = true;
+
         setTimeout(() => {
           self.isLight = true;
-        }, 1500); //第二阶段关闭进入拍照页面
-        setTimeout(() => {
-          self.isShowBg = false;
-          self.isShowBg3 = false;
-          self.isLight = false;
-          self.photographWeb = true;
+          setTimeout(() => {
+            self.isShowBg = false;
+            self.isShowBg3 = false;
+            self.isLight = false;
+            self.photographWeb = true;
+          }, 1500); //第二阶段关闭进入拍照页面
         }, 4000);
       }, 4000);
     }, 1000);
@@ -1423,7 +1424,7 @@ export default class Page extends Vue {
 
   .position {
     margin-top: 10vh;
-    transition: all 3s;
+    // transition: all 3s;
     .arcText {
       position: absolute;
       width: 50vw;
