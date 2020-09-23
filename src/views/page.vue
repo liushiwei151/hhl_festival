@@ -61,7 +61,7 @@
       </div>
     </transition>
     <!-- 提示语句为避免被截图移除shotImage -->
-    <transition name="fade">
+    <transition name="fadess">
       <div class="tipText" v-show="photographWeb && !isBlur">
         <p>点击屏幕任意一处</p>
         <p>拍下您的满月时刻</p>
@@ -267,8 +267,8 @@ export default class Page extends Vue {
     this.init();
     if (this.ceshi) {
       this.isShowPage = false;
-      this.showAnimation();
-      // this.photographWeb = true;
+      // this.showAnimation();
+      this.photographWeb = true;
       // this.isChoseBox = true;
       this.actiondh();
     }
@@ -333,7 +333,7 @@ export default class Page extends Vue {
     this.lastWeb = true;
     setTimeout(() => {
       self.lastAni();
-    }, 300);
+    }, 1500);
   }
   //返回并在local中存入openId
   setOpenId(e: string): string {
@@ -515,6 +515,7 @@ export default class Page extends Vue {
       (self.$refs.imgBox as Element).appendChild(image);
       image.onload = () => {
         setTimeout(() => {
+          self.isChoseBox = false;
           self.isShowImgBox = true;
           self.tip(false);
         }, 300);
@@ -528,19 +529,19 @@ export default class Page extends Vue {
     const elm = self.$refs.shotImage as HTMLElement;
     this.tip("wait");
     const opts = {
+      allowTaint: true,
       useCORS: true, //允许跨域
-      backgroundColor: "rgba(0,0,0,.0)", //或者null，都代表透明
-      scale: window.devicePixelRatio //提高清晰度
+      backgroundColor: "rgba(0,0,0,.0)" //或者null，都代表透明
     };
     html2canvas(elm, opts).then(canvas => {
-      const image = new Image();
+      self.tip(false);
+      // const image = new Image();
       const img = canvas.toDataURL("image/jpeg");
-      image.src = img;
+      // image.src = img;
       // document.body.appendChild(image);
       self.isBlur = true;
       self.isChoseBox = true;
       self.imgText = img;
-      self.tip(false);
       // document.body.appendChild(image);
       // console.log(image);
     });
@@ -1168,6 +1169,16 @@ export default class Page extends Vue {
 .fades-leave-to {
   opacity: 0;
 }
+.fadess-enter-active {
+  transition: opacity 1.5s;
+}
+.fadess-leave-active {
+  transition: opacity 1s;
+}
+.fadess-enter,
+.fadess-leave-to {
+  opacity: 0;
+}
 
 .arcAnimation {
   animation: arcline 4s linear;
@@ -1186,6 +1197,7 @@ export default class Page extends Vue {
   // align-items: center;
   padding-top: 36vh;
   box-sizing: border-box;
+  z-index: 100;
   .arrowAnimation {
     animation: arrowMove 2s linear;
     animation-fill-mode: forwards;
