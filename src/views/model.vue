@@ -15,7 +15,7 @@ export default class model extends Vue {
   //当前时间
   nowDate: number = Number(new Date());
   //矩形模型
-  mesh: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> | null = null;
+  mesh = null;
   mounted() {
     this.init();
   }
@@ -23,11 +23,26 @@ export default class model extends Vue {
   //绘制一个方块
   blockShaow() {
     const geometry = new THREE.BoxGeometry(50, 50, 50);
+    console.group("立方体模型");
+    // 控制台查看立方体数据
+    console.log(geometry);
+    // 控制台查看geometry.toJSON()结果
+    console.log(geometry.toJSON());
+    // JSON对象转化为字符串
+    console.log(JSON.stringify(geometry.toJSON()));
+    // JSON.stringify()方法内部会自动调用参数的toJSON()方法
+    console.log(JSON.stringify(geometry));
+    console.groupEnd();
     const material = new THREE.MeshPhongMaterial({
       color: 0x0000ff,
       specular: 0x444444, //高光部分的颜色
       shininess: 20 //高光部分的亮度，默认30
     });
+    console.group("立方体材质");
+    console.log(material);
+    console.log(material.toJSON());
+    console.log(JSON.stringify(material));
+    console.groupEnd();
     const demo = new THREE.Mesh(geometry, material);
     demo.castShadow = true;
     return demo;
@@ -46,10 +61,15 @@ export default class model extends Vue {
   }
 
   init() {
-    const home = document.getElementById("bone");
+    const home = document.getElementById("model");
     // 创建场景对象scene
     this.scene = new THREE.Scene();
     /**添加的各种模型 */
+    this.scene.add(this.blockShaow());
+    console.group();
+    console.log(this.scene);
+    console.log(this.scene.toJSON());
+    console.groupEnd();
     //点光源
     let point = new THREE.PointLight(0xffffff);
     point.position.set(150, 150, 150); //点光源位置
@@ -81,7 +101,7 @@ export default class model extends Vue {
     // this.camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 1000);
     // this.camera.position.set(200, 300, 200); //设置相机位置
     // this.camera.lookAt(this.scene.position); //设置相机方向(指向的场景对象)
-    this.clock = new THREE.Clock();
+    // this.clock = new THREE.Clock();
     /**
      * 透视投影相机设置
      */

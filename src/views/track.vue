@@ -17,7 +17,7 @@ export default class tracks extends Vue {
   //当前时间
   nowDate: number = Number(new Date());
   //矩形模型
-  mesh: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> | null = null;
+  mesh: THREE.Mesh | null = null;
   mixer!: THREE.AnimationMixer;
   clock!: THREE.Clock;
   AnimationAction: any;
@@ -51,8 +51,8 @@ export default class tracks extends Vue {
      * 编辑group子对象网格模型mesh1和mesh2的帧动画数据
      */
     // 创建名为Box对象的关键帧数据
-    var times = [0, 10]; //关键帧时间数组，离散的时间点序列
-    var values = [0, 0, 0, 150, 0, 0]; //与时间点对应的值组成的数组
+    var times = [0, 10, 15]; //关键帧时间数组，离散的时间点序列
+    var values = [0, 0, 0, 15, 0, 0, 15, 20, 0]; //与时间点对应的值组成的数组
     // 创建位置关键帧对象：0时刻对应位置0, 0, 0   10时刻对应位置150, 0, 0
     var posTrack = new THREE.KeyframeTrack("Box.position", times, values);
     // 创建颜色关键帧对象：10时刻对应颜色1, 0, 0   20时刻对应颜色0, 0, 1
@@ -70,7 +70,7 @@ export default class tracks extends Vue {
 
     // duration决定了默认的播放时间，一般取所有帧动画的最大时间
     // duration偏小，帧动画数据无法播放完，偏大，播放完帧动画会继续空播放
-    var duration = 20;
+    var duration = 10;
     // 多个帧动画作为元素创建一个剪辑clip对象，命名"default"，持续时间20
     this.clip = new THREE.AnimationClip("default", duration, [
       posTrack,
@@ -85,7 +85,7 @@ export default class tracks extends Vue {
     // 剪辑clip作为参数，通过混合器clipAction方法返回一个操作对象AnimationAction
     this.AnimationAction = this.mixer.clipAction(this.clip);
     //通过操作Action设置播放方式
-    this.AnimationAction.timeScale = 1; //默认1，可以调节播放速度
+    this.AnimationAction.timeScale = 10; //默认1，可以调节播放速度
     this.AnimationAction.time = 1; //操作对象设置开始播放时间
     this.clip.duration = 20; //剪辑对象设置播放结束时间
     // AnimationAction.loop = THREE.LoopOnce; //不循环播放

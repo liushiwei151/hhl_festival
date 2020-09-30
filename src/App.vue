@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <router-view />
+    <button @click="fn">123</button>
   </div>
 </template>
 <script lang="ts">
@@ -11,6 +12,10 @@ export default class App extends Vue {
     if (this.$route.name !== "demo1") {
       // this.$router.push("demo1");
     }
+  }
+  fn() {
+    this.$router.push("demo1");
+    alert(123);
   }
 }
 </script>
